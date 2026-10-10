@@ -142,6 +142,11 @@ pub enum Kind {
     /// A rule about how the project works; the decision shape, read second.
     Principle,
     Park,
+    /// A fact about the world outside the project, with its sources and
+    /// confidence (B25).
+    Claim,
+    /// A problem found in the code, open or settled (B25).
+    Finding,
     /// Ids bothy knows exist but does not own (B10); parsed for existence only.
     External,
 }

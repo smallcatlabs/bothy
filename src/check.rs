@@ -14,7 +14,7 @@ use crate::book::{Book, Resolution};
 use crate::cite::{self, Citation};
 use crate::config::Kind;
 use crate::id::Id;
-use crate::schema::{DEFAULT_DECISION_STATUS, Entry};
+use crate::schema::{DEFAULT_CONFIDENCE, DEFAULT_DECISION_STATUS, DEFAULT_FINDING_STATUS, Entry};
 
 #[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
@@ -154,22 +154,26 @@ fn check_ids(book: &Book, out: &mut Vec<Diagnostic>) {
 /// that says nothing (B20), the superseded pair consistent (B3), fired
 /// pairs consistent.
 fn check_fields(book: &Book, out: &mut Vec<Diagnostic>) {
-    let statuses: Vec<String> = book
-        .config
-        .enums
-        .get("decision_status")
-        .map(|e| e.values.clone())
-        .unwrap_or_else(|| {
-            DEFAULT_DECISION_STATUS
-                .iter()
-                .map(|s| s.to_string())
-                .collect()
-        });
+    let declared = |name: &str, default: &[&str]| -> Vec<String> {
+        book.config
+            .enums
+            .get(name)
+            .map(|e| e.values.clone())
+            .unwrap_or_else(|| default.iter().map(|s| s.to_string()).collect())
+    };
+    let statuses = declared("decision_status", DEFAULT_DECISION_STATUS);
+    let confidences = declared("confidence", DEFAULT_CONFIDENCE);
+    let finding_statuses = declared("finding_status", DEFAULT_FINDING_STATUS);
+    // Source tokens are the consumer's own words for its evidence, so
+    // there is no built-in list: a book with sourced claims declares one.
+    let sources = book.config.enums.get("source").map(|e| &e.values);
+    let mut source_enum_missing = false;
 
     for loaded in &book.entries {
         let path = Some(loaded.path.clone());
-        let area = loaded.entry.area();
-        if !book.config.area.contains_key(area) {
+        if let Some(area) = loaded.entry.area()
+            && !book.config.area.contains_key(area)
+        {
             let known: Vec<&str> = book.config.area.keys().map(String::as_str).collect();
             out.push(Diagnostic::fail(
                 path.clone(),
@@ -299,6 +303,84 @@ fn check_fields(book: &Book, out: &mut Vec<Diagnostic>) {
                         loaded.line_of("fired_by"),
                         format!("`fired_by` names {by}, which no namespace defines"),
                         Some("name an existing id".into()),
+                    ));
+                }
+            }
+            Entry::Claim(c) => {
+                if c.statement.trim().is_empty() {
+                    out.push(Diagnostic::fail(
+                        path.clone(),
+                        loaded.line_of("statement"),
+                        "`statement` is blank, so the claim says nothing".into(),
+                        Some("write the claim in `statement`".into()),
+                    ));
+                }
+                match &c.confidence {
+                    Some(conf) if !confidences.iter().any(|v| v == conf) => {
+                        out.push(Diagnostic::fail(
+                            path.clone(),
+                            loaded.line_of("confidence"),
+                            format!("confidence \"{conf}\" is not in the confidence enum"),
+                            Some(format!(
+                                "use one of: {}; a qualifier such as \"for one account\" goes in `scope`",
+                                confidences.join(", ")
+                            )),
+                        ));
+                    }
+                    Some(_) => {}
+                    None => out.push(Diagnostic::note(
+                        path.clone(),
+                        loaded.line_of("statement"),
+                        format!(
+                            "claim {} states no confidence; a reader cannot tell how far to trust it",
+                            c.id
+                        ),
+                    )),
+                }
+                match sources {
+                    Some(values) => {
+                        for src in c.sources.iter().filter(|s| !values.contains(s)) {
+                            out.push(Diagnostic::fail(
+                                path.clone(),
+                                loaded.line_of("sources"),
+                                format!("source \"{src}\" is not in the source enum"),
+                                Some(format!(
+                                    "use one of: {}; or add it under [enum.source] in bothy.toml",
+                                    values.join(", ")
+                                )),
+                            ));
+                        }
+                    }
+                    None if !c.sources.is_empty() && !source_enum_missing => {
+                        source_enum_missing = true;
+                        out.push(Diagnostic::fail(
+                            path.clone(),
+                            loaded.line_of("sources"),
+                            "the claim names sources, and bothy.toml declares no source enum to check them against".into(),
+                            Some("add `[enum.source]` with `values = [...]`, the source words this project uses (reported once, for the first such claim)".into()),
+                        ));
+                    }
+                    None => {}
+                }
+            }
+            Entry::Finding(f) => {
+                if f.title.trim().is_empty() {
+                    out.push(Diagnostic::fail(
+                        path.clone(),
+                        loaded.line_of("title"),
+                        "`title` is blank".into(),
+                        Some("say what is wrong, in one line".into()),
+                    ));
+                }
+                if !finding_statuses.iter().any(|s| s == &f.status) {
+                    out.push(Diagnostic::fail(
+                        path.clone(),
+                        loaded.line_of("status"),
+                        format!("status \"{}\" is not in the finding_status enum", f.status),
+                        Some(format!(
+                            "use one of: {}; what is being done about it goes in `disposition`",
+                            finding_statuses.join(", ")
+                        )),
                     ));
                 }
             }

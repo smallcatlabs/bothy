@@ -527,8 +527,9 @@ pub fn fire(book: &Book, park: Id, by: Id, today: &Date) -> Result<Fired> {
     let ruling = match book.get(by) {
         Some(l) => match &l.entry {
             Entry::Decision(d) => Some((l, d)),
-            Entry::Park(_) => bail!(
-                "{by} is a park; a park is fired by the ruling that takes up its work. Write that ruling with `bothy new decision`, then fire {park} by it"
+            other => bail!(
+                "{by} is a {}; a park is fired by the ruling that takes up its work. Write that ruling with `bothy new decision`, then fire {park} by it",
+                other.kind_name()
             ),
         },
         None if book.knows(by) => None,

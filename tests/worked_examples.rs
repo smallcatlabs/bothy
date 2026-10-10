@@ -1,7 +1,7 @@
 //! The brief's worked examples (docs/design-brief.md §4) parse as the
 //! schema says; a field the schema does not know is refused (B17).
 
-use bothy::schema::{Decision, Park};
+use bothy::schema::{Claim, Decision, Entry, Finding, Park};
 
 #[test]
 fn the_brief_c54_parses() {
@@ -71,4 +71,52 @@ ruling = "r"
 "#;
     let err = toml::from_str::<Decision>(text).expect_err("leading zero refused");
     assert!(err.message().contains("leading zero"), "{}", err.message());
+}
+
+#[test]
+fn the_brief_n2_parses() {
+    let text = r#"
+id = "N2"
+layer = "1"
+statement = """
+The one known Cloudflare block (July 2024, v0.11.1-alpha.11) was
+triggered by over a thousand HEAD requests in one minute.
+"""
+sources = ["incident", "ggg-email"]
+confidence = "confirmed"
+scope = ""
+observed = 2024-07-01
+body = """
+GGG support relayed the report, verbatim (July 2024):
+
+> "Just letting you know that someone has come to us ..."
+"""
+"#;
+    let c: Claim = toml::from_str(text).expect("parses");
+    assert_eq!(c.id.to_string(), "N2");
+    assert_eq!(c.sources, ["incident", "ggg-email"]);
+    assert_eq!(c.confidence.as_deref(), Some("confirmed"));
+    assert_eq!(
+        c.observed.as_ref().map(ToString::to_string).as_deref(),
+        Some("2024-07-01")
+    );
+}
+
+#[test]
+fn the_brief_f22_parses_and_a_resolved_finding_is_retired() {
+    let text = r#"
+id = "F22"
+title = "Dual persistence paths in BuyoutManager"
+status = "confirmed"
+disposition = "won't fix unless touched"
+body = """..."""
+resolved_in = ""
+"#;
+    let f: Finding = toml::from_str(text).expect("parses");
+    assert_eq!(f.disposition.as_deref(), Some("won't fix unless touched"));
+    assert!(!Entry::Finding(f).is_retired());
+
+    let resolved = text.replace("\"confirmed\"", "\"resolved\"");
+    let f: Finding = toml::from_str(&resolved).expect("parses");
+    assert!(Entry::Finding(f).is_retired());
 }

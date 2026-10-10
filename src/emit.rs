@@ -11,7 +11,7 @@
 
 use std::fmt::Write as _;
 
-use crate::schema::{Date, Decision, Park};
+use crate::schema::{Claim, Date, Decision, Finding, Park};
 
 /// The order [`decision`] writes a decision's fields in. A verb that
 /// adds one field to an existing file puts it where this order says.
@@ -146,6 +146,41 @@ pub fn park(p: &Park) -> String {
         let _ = writeln!(out, "fired_by = \"{by}\"");
     }
     opt(&mut out, "measured", &p.measured);
+    out
+}
+
+pub fn claim(c: &Claim) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "id = \"{}\"", c.id);
+    if !c.layer.is_empty() {
+        field(&mut out, "layer", &c.layer);
+    }
+    field(&mut out, "statement", &c.statement);
+    if !c.sources.is_empty() {
+        let _ = writeln!(out, "sources = {}", list(&c.sources));
+    }
+    opt(&mut out, "confidence", &c.confidence);
+    opt(&mut out, "scope", &c.scope);
+    opt(&mut out, "basis", &c.basis);
+    if let Some(x) = &c.observed {
+        date(&mut out, "observed", x);
+    }
+    if !c.body.is_empty() {
+        field(&mut out, "body", &c.body);
+    }
+    out
+}
+
+pub fn finding(f: &Finding) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "id = \"{}\"", f.id);
+    field(&mut out, "title", &f.title);
+    field(&mut out, "status", &f.status);
+    opt(&mut out, "disposition", &f.disposition);
+    opt(&mut out, "resolved_in", &f.resolved_in);
+    if !f.body.is_empty() {
+        field(&mut out, "body", &f.body);
+    }
     out
 }
 

@@ -277,11 +277,12 @@ struct ListArgs {
     #[arg(long)]
     uncited: bool,
 
-    /// Include retired decisions and fired parks, which lists omit by default.
+    /// Include retired decisions, fired parks and settled findings, which
+    /// lists omit by default.
     #[arg(long)]
     all: bool,
 
-    /// Only retired decisions or fired parks.
+    /// Only retired decisions, fired parks or settled findings.
     #[arg(long, conflicts_with = "all")]
     retired: bool,
 }
@@ -296,6 +297,10 @@ enum KindArg {
     Principles,
     #[value(alias = "park")]
     Parks,
+    #[value(alias = "claim")]
+    Claims,
+    #[value(alias = "finding")]
+    Findings,
 }
 
 impl KindArg {
@@ -305,6 +310,8 @@ impl KindArg {
             KindArg::Invariants => Kind::Invariant,
             KindArg::Principles => Kind::Principle,
             KindArg::Parks => Kind::Park,
+            KindArg::Claims => Kind::Claim,
+            KindArg::Findings => Kind::Finding,
         }
     }
 }
@@ -388,7 +395,11 @@ fn run(cli: Cli) -> Result<ExitCode> {
                 .entries
                 .iter()
                 .filter(|l| l.kind == want)
-                .filter(|l| args.area.as_deref().is_none_or(|a| l.entry.area() == a))
+                .filter(|l| {
+                    args.area
+                        .as_deref()
+                        .is_none_or(|a| l.entry.area() == Some(a))
+                })
                 .filter(|l| match (args.all, args.retired) {
                     (true, _) => true,
                     (_, true) => l.entry.is_retired(),
@@ -407,7 +418,11 @@ fn run(cli: Cli) -> Result<ExitCode> {
                     .collect();
                 println!("{}", serde_json::to_string_pretty(&items)?);
             } else {
-                let area_width = rows.iter().map(|l| l.entry.area().len()).max().unwrap_or(4);
+                let area_width = rows
+                    .iter()
+                    .map(|l| sorted_by(&l.entry).len())
+                    .max()
+                    .unwrap_or(4);
                 for l in rows {
                     let id = l.entry.id();
                     let mark = if l.entry.is_retired() {
@@ -418,8 +433,8 @@ fn run(cli: Cli) -> Result<ExitCode> {
                     println!(
                         "{:<5} {:<area_width$}  {}{mark}",
                         id.to_string(),
-                        l.entry.area(),
-                        l.entry.headline().trim(),
+                        sorted_by(&l.entry),
+                        one_line(l.entry.headline()),
                     );
                 }
             }
@@ -807,7 +822,62 @@ fn print_entry(entry: &Entry, path: &std::path::Path) {
                 println!("\nMeasured:\n{}", m.trim_end());
             }
         }
+        Entry::Claim(c) => {
+            println!("{} — {}", c.id, c.statement.trim_end());
+            let mut line = path.display().to_string();
+            if !c.layer.is_empty() {
+                line.push_str(&format!(" · layer: {}", c.layer));
+            }
+            match &c.confidence {
+                Some(conf) => line.push_str(&format!(" · {conf}")),
+                None => line.push_str(" · no confidence stated"),
+            }
+            if let Some(date) = &c.observed {
+                line.push_str(&format!(" · observed {date}"));
+            }
+            println!("{line}");
+            print_list("Sources", &c.sources);
+            if let Some(scope) = &c.scope {
+                println!("Scope: {}", scope.trim_end());
+            }
+            if let Some(basis) = &c.basis {
+                println!("As written: [{}]", basis.trim_end());
+            }
+            if !c.body.trim().is_empty() {
+                println!("\n{}", c.body.trim_end());
+            }
+        }
+        Entry::Finding(f) => {
+            println!("{} — {}", f.id, f.title);
+            println!("{} · {}", path.display(), f.status);
+            if let Some(d) = &f.disposition {
+                println!("Disposition: {}", d.trim_end());
+            }
+            if let Some(r) = &f.resolved_in {
+                println!("Settled: {}", r.trim_end());
+            }
+            if !f.body.trim().is_empty() {
+                println!("\n{}", f.body.trim_end());
+            }
+        }
     }
+}
+
+/// The word a list shows between the id and the headline: the area of
+/// a decision or a park, a claim's confidence, a finding's status.
+fn sorted_by(entry: &Entry) -> &str {
+    match entry {
+        Entry::Decision(d) => &d.area,
+        Entry::Park(p) => &p.area,
+        Entry::Claim(c) => c.confidence.as_deref().unwrap_or("-"),
+        Entry::Finding(f) => &f.status,
+    }
+}
+
+/// A headline on one line: a claim's statement is wrapped where its
+/// author wrapped it, and a list row is one line.
+fn one_line(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 fn print_list(label: &str, items: &[String]) {

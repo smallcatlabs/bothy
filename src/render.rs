@@ -23,7 +23,7 @@ use crate::book::{Book, Loaded};
 use crate::check::Diagnostic;
 use crate::config::Kind;
 use crate::id::Id;
-use crate::schema::Entry;
+use crate::schema::{Claim, Entry};
 
 /// Markers in the order they render, whatever order they were written in.
 pub const MARKER_ORDER: [&str; 4] = ["Why", "Details", "Pinned", "Evidence"];
@@ -32,7 +32,10 @@ pub const MARKER_ORDER: [&str; 4] = ["Why", "Details", "Pinned", "Evidence"];
 /// `- **C<n> — <title>** <ruling> *Why:* … <history>`; the ruling joins
 /// the title with a space unless it opens with punctuation; an invariant
 /// is `<n>. **<title>** <ruling>`; a principle `- **P<n>.** <ruling>`; a
-/// park `- <item> → <home>. Trigger: <trigger>`.
+/// park `- <item> → <home>. Trigger: <trigger>`. A claim is master's
+/// paragraph form, `**N<n>. <statement>** [<sources> — <confidence>]`
+/// with its body beneath; a finding is `**F<n>. <title>** — <status>`
+/// with its disposition, where it was settled, and its body (B25).
 pub fn entry_line(l: &Loaded) -> String {
     let mut s = String::new();
     match (&l.entry, l.kind) {
@@ -97,8 +100,49 @@ pub fn entry_line(l: &Loaded) -> String {
                 let _ = write!(s, " Measured: {}", m.trim());
             }
         }
+        (Entry::Claim(c), _) => {
+            let _ = write!(s, "**{}. {}**", c.id, c.statement.trim());
+            let tag = claim_tag(c);
+            if !tag.is_empty() {
+                let _ = write!(s, " [{tag}]");
+            }
+            if !c.body.trim().is_empty() {
+                let _ = write!(s, "\n{}", c.body.trim_end());
+            }
+        }
+        (Entry::Finding(f), _) => {
+            let _ = write!(s, "**{}. {}** — {}", f.id, f.title.trim(), f.status);
+            if let Some(d) = &f.disposition {
+                let _ = write!(s, "; {}", d.trim());
+            }
+            if let Some(r) = &f.resolved_in {
+                let _ = write!(s, ". Settled: {}", r.trim());
+            }
+            if !f.body.trim().is_empty() {
+                let _ = write!(s, "\n\n{}", f.body.trim_end());
+            }
+        }
     }
     s
+}
+
+/// What a claim rests on, as one tag: its author's own words when the
+/// claim keeps them in `basis`, else its typed fields joined the same way.
+pub fn claim_tag(c: &Claim) -> String {
+    if let Some(b) = &c.basis {
+        return b.trim().to_string();
+    }
+    let mut tag = c.sources.join(" + ");
+    if let Some(conf) = &c.confidence {
+        if !tag.is_empty() {
+            tag.push_str(" — ");
+        }
+        tag.push_str(conf);
+        if let Some(scope) = &c.scope {
+            let _ = write!(tag, " {}", scope.trim());
+        }
+    }
+    tag
 }
 
 /// What a template sees for one entry.
@@ -149,6 +193,8 @@ pub fn kind_name(kind: Kind) -> &'static str {
         Kind::Invariant => "invariant",
         Kind::Principle => "principle",
         Kind::Park => "park",
+        Kind::Claim => "claim",
+        Kind::Finding => "finding",
         Kind::External => "external",
     }
 }
@@ -162,7 +208,7 @@ pub fn area_view(book: &Book, name: &str, notes: &mut Vec<Diagnostic>) -> AreaVi
     let live: Vec<&Loaded> = book
         .entries
         .iter()
-        .filter(|l| l.entry.area() == name && !l.entry.is_retired())
+        .filter(|l| l.entry.area() == Some(name) && !l.entry.is_retired())
         .collect();
     let by_id: BTreeMap<Id, &Loaded> = live.iter().map(|l| (l.entry.id(), *l)).collect();
 
@@ -327,7 +373,7 @@ pub fn all(book: &Book, notes: &mut Vec<Diagnostic>) -> Result<Vec<Rendered>> {
             .entries
             .iter()
             .filter(|l| l.kind == kind && !l.entry.is_retired())
-            .filter(|l| area.is_none_or(|a| l.entry.area() == a))
+            .filter(|l| area.is_none_or(|a| l.entry.area() == Some(a)))
             .collect();
         v.sort_by_key(|l| l.entry.id());
         v.iter().map(|l| view(l)).collect()

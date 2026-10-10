@@ -128,6 +128,80 @@ pub struct Park {
     pub measured: Option<String>,
 }
 
+/// A fact about the world outside the project, with what it rests on
+/// (B25). It names no area: a claim is cited by number from wherever it
+/// bears, and `layer` is the heading it sits under in its register.
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct Claim {
+    pub id: Id,
+    /// The section of the register the claim sits under, free text.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub layer: String,
+    /// The claim itself, in its author's words.
+    pub statement: String,
+    /// What it rests on, each a value of the consumer's `source` enum (B7).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sources: Vec<String>,
+    /// One of the consumer's `confidence` values (B7). A claim without
+    /// one is reported by `check`, not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub confidence: Option<String>,
+    /// The qualifier that rode on the confidence word: "for 15 of 22
+    /// groups; September 8, 2026".
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
+    /// The source-and-confidence tag as its author wrote it, when an
+    /// imported claim carries one ("TOM + Cloudflare public docs — High").
+    /// `sources`, `confidence` and `scope` are the typed reading of it;
+    /// this keeps the words the enums cannot (B18).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub basis: Option<String>,
+    /// The day the evidence was observed, when the claim states one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub observed: Option<Date>,
+    /// The evidence and its consequences: quotes, tables, reasoning.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub body: String,
+}
+
+/// A problem found in the code, open or settled, in one shape for both
+/// states (B25). It names no area: a finding is anchored to symbols.
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct Finding {
+    pub id: Id,
+    pub title: String,
+    /// One of the consumer's `finding_status` values (B7).
+    pub status: String,
+    /// What is being done about it: "won't fix unless touched".
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub disposition: Option<String>,
+    /// How and where it was settled: "Fixed, Phase 2", "PR #161".
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resolved_in: Option<String>,
+    /// The mechanism, the evidence, and any rule it left standing.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub body: String,
+}
+
+/// The built-in confidence values, used when the consumer declares none (B7).
+pub const DEFAULT_CONFIDENCE: &[&str] = &["confirmed", "high", "provisional", "hypothesis"];
+
+/// The built-in finding statuses, used when the consumer declares none.
+pub const DEFAULT_FINDING_STATUS: &[&str] = &[
+    "suspected",
+    "likely",
+    "confirmed",
+    "resolved",
+    "retired",
+    "superseded",
+];
+
+/// The finding statuses that mean the finding is settled. A settled
+/// finding keeps its file and leaves lists and packs (B3, B25).
+pub const SETTLED_FINDING_STATUS: &[&str] = &["resolved", "retired", "superseded"];
+
 /// Any entry shape bothy owns. The kind is the namespace's: an invariant
 /// and a principle use the [`Decision`] shape, so one struct serves
 /// three kinds and the kind decides where the entry renders and where
@@ -137,6 +211,8 @@ pub struct Park {
 pub enum Entry {
     Decision(Decision),
     Park(Park),
+    Claim(Claim),
+    Finding(Finding),
 }
 
 impl Entry {
@@ -144,13 +220,18 @@ impl Entry {
         match self {
             Entry::Decision(d) => d.id,
             Entry::Park(p) => p.id,
+            Entry::Claim(c) => c.id,
+            Entry::Finding(f) => f.id,
         }
     }
 
-    pub fn area(&self) -> &str {
+    /// The area the entry names; `None` for a claim or a finding, which
+    /// name none (B25).
+    pub fn area(&self) -> Option<&str> {
         match self {
-            Entry::Decision(d) => &d.area,
-            Entry::Park(p) => &p.area,
+            Entry::Decision(d) => Some(&d.area),
+            Entry::Park(p) => Some(&p.area),
+            Entry::Claim(_) | Entry::Finding(_) => None,
         }
     }
 
@@ -158,23 +239,32 @@ impl Entry {
         match self {
             Entry::Decision(_) => "decision",
             Entry::Park(_) => "park",
+            Entry::Claim(_) => "claim",
+            Entry::Finding(_) => "finding",
         }
     }
 
-    /// The one line a list shows: a decision's title, a park's item.
+    /// The one line a list shows: a decision's title, a park's item, a
+    /// claim's statement, a finding's title.
     pub fn headline(&self) -> &str {
         match self {
             Entry::Decision(d) => &d.title,
             Entry::Park(p) => &p.item,
+            Entry::Claim(c) => &c.statement,
+            Entry::Finding(f) => &f.title,
         }
     }
 
     /// A retired entry keeps its file and leaves every projection and
-    /// pack (B3): a decision that is not `ruled`, a park that has fired.
+    /// pack (B3): a decision that is not `ruled`, a park that has fired,
+    /// a finding that is settled. A claim is never retired; one that
+    /// falls is rewritten in place and says so.
     pub fn is_retired(&self) -> bool {
         match self {
             Entry::Decision(d) => d.status != "ruled",
             Entry::Park(p) => p.fired.is_some(),
+            Entry::Claim(_) => false,
+            Entry::Finding(f) => SETTLED_FINDING_STATUS.contains(&f.status.as_str()),
         }
     }
 
@@ -220,6 +310,26 @@ impl Entry {
                     out.push(("measured", m));
                 }
             }
+            Entry::Claim(c) => {
+                out.push(("statement", c.statement.as_str()));
+                if let Some(x) = &c.scope {
+                    out.push(("scope", x));
+                }
+                if let Some(x) = &c.basis {
+                    out.push(("basis", x));
+                }
+                out.push(("body", c.body.as_str()));
+            }
+            Entry::Finding(f) => {
+                out.push(("title", f.title.as_str()));
+                if let Some(x) = &f.disposition {
+                    out.push(("disposition", x));
+                }
+                if let Some(x) = &f.resolved_in {
+                    out.push(("resolved_in", x));
+                }
+                out.push(("body", f.body.as_str()));
+            }
         }
         out
     }
@@ -243,6 +353,12 @@ impl Entry {
                     out.push(("fired", x));
                 }
             }
+            Entry::Claim(c) => {
+                if let Some(x) = &c.observed {
+                    out.push(("observed", x));
+                }
+            }
+            Entry::Finding(_) => {}
         }
         out
     }

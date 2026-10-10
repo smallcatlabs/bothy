@@ -11,7 +11,7 @@ use regex::Regex;
 use crate::check::{Diagnostic, Level};
 use crate::config::{Config, Kind};
 use crate::id::Id;
-use crate::schema::{Decision, Entry, Park};
+use crate::schema::{Claim, Decision, Entry, Finding, Park};
 
 /// One entry as loaded: where it came from and what it says.
 #[derive(Debug)]
@@ -316,6 +316,8 @@ pub(crate) fn parse_entry(kind: Kind, source: &str) -> Result<Entry, toml::de::E
             Entry::Decision(toml::from_str::<Decision>(source)?)
         }
         Kind::Park => Entry::Park(toml::from_str::<Park>(source)?),
+        Kind::Claim => Entry::Claim(toml::from_str::<Claim>(source)?),
+        Kind::Finding => Entry::Finding(toml::from_str::<Finding>(source)?),
         Kind::External => unreachable!("external namespaces have no entry files"),
     })
 }

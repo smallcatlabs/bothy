@@ -1,0 +1,26 @@
+id = "B25"
+area = "schema"
+title = "A claim and a finding are entry kinds with their own shapes, and neither names an area"
+ruling = '''
+A namespace of `kind = "claim"` holds claims: a `statement`, the
+`sources` it rests on, a `confidence`, the `scope` that qualifies the
+confidence, the day it was `observed`, a `body`, and the `layer` it
+sits under in its register. A namespace of `kind = "finding"` holds
+findings: a `title`, a `status`, a `disposition`, where it was
+`resolved_in`, and a `body`, one shape whether the finding is open or
+settled. Neither has an `area`: a claim is cited by number from
+wherever it bears and a finding is anchored to symbols, so a book of
+only claims and findings declares no area at all, and B19 binds the
+kinds that name one. `confidence` and `finding_status` have built-in
+lists a consumer may replace in `bothy.toml` (B7). `source` has none,
+because source words are each project's own: a book whose claims name
+sources declares `[enum.source]` or `check` refuses it. A claim with no
+confidence is reported, not refused. An imported claim keeps its tag as
+its author wrote it in `basis`, beside the typed reading, the way a
+decision keeps `history` (B18). A finding whose status is `resolved`,
+`retired` or `superseded` is retired in B3's sense: it keeps its file
+and leaves lists and packs. A claim is never retired; one that falls is
+rewritten in place.
+'''
+why = "Master's 80 claims and 78 findings import under these shapes with no exception (2026-10-10, at acquisition master 946a4f51). An area on either would have been one the importer invented, and a closed list of sources built into the tool would have been acquisition's words forced on the next consumer."
+decided = 2026-10-10

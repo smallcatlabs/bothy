@@ -1,0 +1,8 @@
+id = "K14"
+area = "schema"
+item = "Ledger rows as an entry kind: one file per run, with the columns declared in bothy.toml (the brief, section 4.5; B7's last sentence)"
+home = '''
+a fifth shape in src/schema.rs and a `kind = "ledger"` namespace, with a table projection'''
+trigger = "a consumer adopting bothy whose run ledger a session has to cite or check; acquisition's two ledgers are the test data"
+why = "done-criterion 4 names claims and findings only, and no reader of a book has asked for a ledger row yet"
+parked = 2026-10-10

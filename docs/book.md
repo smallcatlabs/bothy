@@ -70,10 +70,30 @@ date from a recalled one. *Why:* Acquisition applies the same rule to sizes: a n
 - **B19 — Areas are declared in bothy.toml with a title and the paths they govern** An entry naming an undeclared area is refused. `pack --path` resolves
 an area through the declared paths. `cross-cutting` is declared like any
 other area and is the one every pack includes. *Why:* A misspelled area would otherwise become a new area, silently. Decided 2026-10-09.
+- **B25 — A claim and a finding are entry kinds with their own shapes, and neither names an area** A namespace of `kind = "claim"` holds claims: a `statement`, the
+`sources` it rests on, a `confidence`, the `scope` that qualifies the
+confidence, the day it was `observed`, a `body`, and the `layer` it
+sits under in its register. A namespace of `kind = "finding"` holds
+findings: a `title`, a `status`, a `disposition`, where it was
+`resolved_in`, and a `body`, one shape whether the finding is open or
+settled. Neither has an `area`: a claim is cited by number from
+wherever it bears and a finding is anchored to symbols, so a book of
+only claims and findings declares no area at all, and B19 binds the
+kinds that name one. `confidence` and `finding_status` have built-in
+lists a consumer may replace in `bothy.toml` (B7). `source` has none,
+because source words are each project's own: a book whose claims name
+sources declares `[enum.source]` or `check` refuses it. A claim with no
+confidence is reported, not refused. An imported claim keeps its tag as
+its author wrote it in `basis`, beside the typed reading, the way a
+decision keeps `history` (B18). A finding whose status is `resolved`,
+`retired` or `superseded` is retired in B3's sense: it keeps its file
+and leaves lists and packs. A claim is never retired; one that falls is
+rewritten in place. *Why:* Master's 80 claims and 78 findings import under these shapes with no exception (2026-10-10, at acquisition master 946a4f51). An area on either would have been one the importer invented, and a closed list of sources built into the tool would have been acquisition's words forced on the next consumer. Decided 2026-10-10.
 
 Parked, each with the trigger that reopens it:
 
 - Jujutsu-aware blame (change ids instead of commit hashes) → import's date filling (B13). Trigger: the jj trial in acquisition surviving its first slice
+- Ledger rows as an entry kind: one file per run, with the columns declared in bothy.toml (the brief, section 4.5; B7's last sentence) → a fifth shape in src/schema.rs and a `kind = "ledger"` namespace, with a table projection. Trigger: a consumer adopting bothy whose run ledger a session has to cite or check; acquisition's two ledgers are the test data (done-criterion 4 names claims and findings only, and no reader of a book has asked for a ledger row yet)
 
 ## Integrity: what check refuses and what it reports
 

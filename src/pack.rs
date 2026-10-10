@@ -217,7 +217,7 @@ fn pack_areas(
     let cross: Vec<&Loaded> = book
         .entries
         .iter()
-        .filter(|l| l.kind == Kind::Decision && l.entry.area() == "cross-cutting")
+        .filter(|l| l.kind == Kind::Decision && l.entry.area() == Some("cross-cutting"))
         .filter(live)
         .collect();
     if !cross.is_empty() && !areas.iter().any(|a| a == "cross-cutting") {
@@ -233,7 +233,7 @@ fn pack_areas(
         let rulings: Vec<&Loaded> = book
             .entries
             .iter()
-            .filter(|l| l.kind == Kind::Decision && l.entry.area() == area)
+            .filter(|l| l.kind == Kind::Decision && l.entry.area() == Some(area))
             .filter(live)
             .collect();
         if !rulings.is_empty() {
@@ -250,7 +250,7 @@ fn pack_areas(
         let parks: Vec<&Loaded> = book
             .entries
             .iter()
-            .filter(|l| l.kind == Kind::Park && l.entry.area() == area)
+            .filter(|l| l.kind == Kind::Park && l.entry.area() == Some(area))
             .filter(live)
             .collect();
         if !parks.is_empty() {
@@ -363,6 +363,9 @@ fn render_entry(l: &Loaded) -> String {
     let line = crate::render::entry_line(l);
     let mut s = match l.kind {
         Kind::Park => line.replacen("- ", &format!("- **{}** ", l.entry.id()), 1),
+        // A claim or a finding is paragraphs, not a bullet; a blank line
+        // keeps the next entry out of its last paragraph.
+        Kind::Claim | Kind::Finding => format!("{line}\n"),
         _ => line,
     };
     s.push('\n');
