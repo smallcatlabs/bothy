@@ -1,0 +1,20 @@
+id = "B26"
+area = "repo"
+title = "The second-consumer test is on the verbs that read a book, not on the importer"
+ruling = '''
+The brief's done-criterion 4 says master's claims and findings import
+under a second `bothy.toml` "with no code change". As written it could
+not be met: the claim and finding kinds did not exist, and master's
+markdown is not the playground's. What the criterion tests is that
+nothing in the tool is acquisition's playground in disguise. So it is
+read this way: once a kind exists (B25), everything that differs
+between consumers is in each one's `bothy.toml`, and `check`, `list`,
+`show` and `pack` hold no branch that names a consumer. A grammar under
+`import` is the one place code may know a project's markdown: one
+module per source, run once per adoption, and named for its source.
+Master's is `bothy import acquisition-master`. Met 2026-10-10: master's
+book declares three namespaces, no area and no projection, and the read
+verbs run on it unchanged.
+'''
+why = "An importer reads a project's prose conventions, which differ per project by nature; the verbs read TOML, which does not. Holding the importer to 'no code change' would mean either never importing a second project or pretending two markdown registries share a grammar."
+decided = 2026-10-10

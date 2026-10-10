@@ -220,11 +220,15 @@ impl NewKind {
 
 #[derive(Args)]
 struct ImportArgs {
-    /// The grammar to read. Only `acquisition` exists.
+    /// The grammar to read: `acquisition` is the playground's registry
+    /// (decisions, parks, principles, invariants); `acquisition-master`
+    /// is the master branch's registers (claims and findings).
     #[arg(value_enum)]
     grammar: Grammar,
 
-    /// The source: the directory holding CONTEXT.md and decisions/.
+    /// The source. For `acquisition`: the directory holding CONTEXT.md
+    /// and decisions/. For `acquisition-master`: the root of a checkout
+    /// of the master branch, the directory holding docs/.
     source: PathBuf,
 
     /// Where to write bothy.toml and bothy/. Outside the source tree the
@@ -240,6 +244,7 @@ struct ImportArgs {
 #[derive(ValueEnum, Clone, Copy)]
 enum Grammar {
     Acquisition,
+    AcquisitionMaster,
 }
 
 #[derive(Args)]
@@ -719,7 +724,9 @@ fn date_or_today(given: Option<&str>) -> Result<Date> {
 }
 
 fn run_import(args: &ImportArgs, json: bool) -> Result<ExitCode> {
-    let Grammar::Acquisition = args.grammar;
+    if let Grammar::AcquisitionMaster = args.grammar {
+        return run_import_master(args, json);
+    }
     let imported = import::parse_playground(&args.source)?;
     if !args.dry_run {
         let summary = import::write(&imported, &args.out, &args.source)?;
@@ -754,6 +761,45 @@ fn run_import(args: &ImportArgs, json: bool) -> Result<ExitCode> {
         println!("{}", serde_json::to_string_pretty(&out)?);
     } else {
         print!("{}", import::report(&imported));
+    }
+    Ok(if imported.exceptions.is_empty() {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::from(1)
+    })
+}
+
+fn run_import_master(args: &ImportArgs, json: bool) -> Result<ExitCode> {
+    let imported = import::master::parse(&args.source)?;
+    if !args.dry_run {
+        let summary = import::master::write(&imported, &args.out, &args.source)?;
+        if !json {
+            println!(
+                "wrote {} entries; the book is {}",
+                summary.written,
+                summary.config.display()
+            );
+        }
+    }
+    if json {
+        #[derive(Serialize)]
+        struct Out<'a> {
+            network_claims: usize,
+            trade_claims: usize,
+            findings: usize,
+            notes: &'a [String],
+            exceptions: &'a [String],
+        }
+        let out = Out {
+            network_claims: imported.network.len(),
+            trade_claims: imported.trade.len(),
+            findings: imported.findings.len(),
+            notes: &imported.notes,
+            exceptions: &imported.exceptions,
+        };
+        println!("{}", serde_json::to_string_pretty(&out)?);
+    } else {
+        print!("{}", import::master::report(&imported));
     }
     Ok(if imported.exceptions.is_empty() {
         ExitCode::SUCCESS

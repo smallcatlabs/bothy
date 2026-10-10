@@ -1,0 +1,7 @@
+id = "K15"
+area = "cli"
+item = "Writing and rendering claims and findings: `new claim`, `new finding`, a `list findings --status` filter, and a projection that renders a register back to markdown"
+home = "src/write.rs for the verbs, a built-in template in src/render.rs for the registers"
+trigger = "master adopting bothy as its live book, which is the owner's call after acquisition's search slice closes"
+why = "until then master's claims are authored in its documents and imported on demand, so nothing writes a claim through the tool"
+parked = 2026-10-10

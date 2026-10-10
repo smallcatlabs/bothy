@@ -19,6 +19,10 @@
 //! on their one line, marker texts as written (B18). Dates the prose
 //! lacks come from git and say so (B13). Nothing under the consumer's
 //! tree is written (B4); the output goes where the caller says.
+//!
+//! This file is the playground's grammar. A second source has its own
+//! module and shares nothing but the writer (B26): [`master`] reads the
+//! claims and findings on acquisition's master branch.
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -31,6 +35,8 @@ use regex::Regex;
 use crate::emit;
 use crate::id::Id;
 use crate::schema::{Date, Decision, Park};
+
+pub mod master;
 
 /// What one area's file told us, for the config and the renderer.
 #[derive(Debug, Default)]
@@ -778,7 +784,7 @@ values = ["ruled", "superseded", "retired"]
     s
 }
 
-fn pathdiff(from: &Path, to: &Path) -> String {
+pub(crate) fn pathdiff(from: &Path, to: &Path) -> String {
     let rel = from
         .strip_prefix(to)
         .map(|p| p.display().to_string())

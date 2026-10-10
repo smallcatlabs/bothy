@@ -193,6 +193,7 @@ Parked, each with the trigger that reopens it:
 - The seat verb: the legibility seat's questions, pack and transcript, scored → a subcommand over pack. Trigger: the first pack worth measuring, after v0's done-criteria
 - The stats verb (the baseline table) and a standalone blame verb → subcommands over the loaded book. Trigger: the next acquisition reflection wanting the baseline table from one command
 - A verb that supersedes a ruling: writes the new one and sets the old one's `status` and `superseded_by` in one call → a `--supersedes <id>` flag on `bothy new decision`, over the same in-place edit `amend` uses (B23). Trigger: the first ruling superseded by hand, or a `check` failure on a superseded pair that a session got wrong (no ruling in this book has been superseded yet, and the two lines are short to write by hand)
+- Writing and rendering claims and findings: `new claim`, `new finding`, a `list findings --status` filter, and a projection that renders a register back to markdown → src/write.rs for the verbs, a built-in template in src/render.rs for the registers. Trigger: master adopting bothy as its live book, which is the owner's call after acquisition's search slice closes (until then master's claims are authored in its documents and imported on demand, so nothing writes a claim through the tool)
 
 ## This repository: language, dependencies, consumers, release
 
@@ -207,6 +208,19 @@ by hand before the tool existed. The design brief is history once they
 exist: where the brief and an entry disagree, the entry wins.
 Acquisition's playground is the second consumer and master's claims and
 findings the third. *Why:* A generalization wants two consumers before it is made; this is the cheapest one, and the one that tests writing the format by hand. Decided 2026-10-09.
+- **B26 — The second-consumer test is on the verbs that read a book, not on the importer** The brief's done-criterion 4 says master's claims and findings import
+under a second `bothy.toml` "with no code change". As written it could
+not be met: the claim and finding kinds did not exist, and master's
+markdown is not the playground's. What the criterion tests is that
+nothing in the tool is acquisition's playground in disguise. So it is
+read this way: once a kind exists (B25), everything that differs
+between consumers is in each one's `bothy.toml`, and `check`, `list`,
+`show` and `pack` hold no branch that names a consumer. A grammar under
+`import` is the one place code may know a project's markdown: one
+module per source, run once per adoption, and named for its source.
+Master's is `bothy import acquisition-master`. Met 2026-10-10: master's
+book declares three namespaces, no area and no projection, and the read
+verbs run on it unchanged. *Why:* An importer reads a project's prose conventions, which differ per project by nature; the verbs read TOML, which does not. Holding the importer to 'no code change' would mean either never importing a second project or pretending two markdown registries share a grammar. Decided 2026-10-10.
 
 Parked, each with the trigger that reopens it:
 

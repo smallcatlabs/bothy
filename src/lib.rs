@@ -15,9 +15,9 @@
 //! into memory (B8); [`cite`] finds where ids are named; [`check`] runs
 //! the integrity checks (B20); [`pack`] assembles what a session reads
 //! for one task (B15); [`emit`] writes an entry as TOML; [`import`] is
-//! the one-time migration of acquisition's markdown registry; [`render`]
-//! writes the markdown projections (B9); [`mod@write`] is the verbs that
-//! change the book (B22).
+//! the one-time migration of a markdown registry, one grammar per
+//! source (B26); [`render`] writes the markdown projections (B9);
+//! [`mod@write`] is the verbs that change the book (B22).
 
 pub mod book;
 pub mod check;
