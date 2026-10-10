@@ -1,0 +1,7 @@
+id = "K11"
+area = "pack"
+item = "Inlining a section of a document a pack names under 'read also' (a slice record's checklist, say), rather than naming the file with its size"
+home = "the `also` list in an area's bothy.toml block, with a way to name a section"
+trigger = "the acquisition import landing, and a session that wanted the checklist inline rather than named"
+why = "a whole slice record would swamp any budget; the right grain is a section, and no consumer has one yet"
+parked = 2026-10-09

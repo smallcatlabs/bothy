@@ -12,10 +12,13 @@ rulings are entries in `bothy/decisions/` and its deferred work in
 1. `README.md`, for what the tool is and the commands that exist.
 2. Run `cargo build && ./target/debug/bothy check`. The output is the
    state of the book.
-3. Run `./target/debug/bothy list decisions` and read the titles. Open
-   any ruling with `./target/debug/bothy show B3`. Read the rulings for
-   the area you are about to change; the areas and the source paths
-   each one governs are declared in `bothy.toml`.
+3. Run `./target/debug/bothy pack --path <the file you will change>`.
+   It prints the rulings and parks for that file's area, the
+   cross-cutting rulings, and where each is held in code, as one
+   document. `--area <name>` does the same for a whole area;
+   `bothy list decisions` and `bothy show B3` are the smaller views.
+   The areas and the paths each one governs are declared in
+   `bothy.toml`.
 4. `docs/design-brief.md` is history: the design as it stood when the
    project began, edited in place where rulings changed it. Where it and
    an entry disagree, the entry wins.
@@ -45,6 +48,6 @@ rulings are entries in `bothy/decisions/` and its deferred work in
 
 ## What exists and what does not
 
-`check`, `list` and `show` exist. `pack`, `render`, `new`, `amend`,
+`check`, `list`, `show` and `pack` exist. `render`, `new`, `amend`,
 `park fire` and `import` are described in the brief and do not exist
 yet; the uncited rulings `check` reports are the ones waiting for them.

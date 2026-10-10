@@ -45,6 +45,10 @@ pub struct Area {
     /// Globs, relative to the root, of the files this area governs.
     #[serde(default)]
     pub paths: Vec<String>,
+    /// Documents a session reads before touching this area, which a pack
+    /// names with their sizes but does not inline (K11).
+    #[serde(default)]
+    pub also: Vec<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -75,6 +79,10 @@ fn default_scope() -> Vec<String> {
 #[serde(rename_all = "lowercase")]
 pub enum Kind {
     Decision,
+    /// A property that must never be broken; the decision shape, read first.
+    Invariant,
+    /// A rule about how the project works; the decision shape, read second.
+    Principle,
     Park,
     /// Ids bothy knows exist but does not own (B10); parsed for existence only.
     External,

@@ -13,13 +13,15 @@
 //! Module map: [`id`] names things; [`config`] reads `bothy.toml`;
 //! [`schema`] is the entry kinds; [`book`] loads a consumer's whole book
 //! into memory (B8); [`cite`] finds where ids are named; [`check`] runs
-//! the integrity checks (B20).
+//! the integrity checks (B20); [`pack`] assembles what a session reads
+//! for one task (B15).
 
 pub mod book;
 pub mod check;
 pub mod cite;
 pub mod config;
 pub mod id;
+pub mod pack;
 pub mod schema;
 
 pub use book::Book;

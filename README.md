@@ -23,7 +23,7 @@ bothy check                    # ids, fields, citations; exit 1 on any failure
 bothy show B3                  # one ruling, what it names, what cites it
 bothy list parks --area cli    # everything this area has deferred, with its trigger
 bothy list decisions --uncited # rulings no code, test or document names yet
-bothy pack --area check        # what a session reads before touching the checks (coming)
+bothy pack --area check        # what a session reads before touching the checks
 bothy render --check           # the markdown on disk matches the source (coming)
 ```
 
@@ -34,12 +34,13 @@ file. The index is built in memory every run and never written. The
 markdown is a projection. Those three roles — intent, derivation,
 rendering — are the design.
 
-Status: `check`, `list` and `show` work, against bothy's own book under
-`bothy/`: twenty rulings and ten parks, written by hand before the tool
-existed. The tool is its own first consumer; its second is
+Status: `check`, `list`, `show` and `pack` work, against bothy's own
+book under `bothy/`: twenty rulings and eleven parks, the first thirty
+written by hand before the tool existed. The tool is its own first
+consumer; its second is
 [acquisition](https://github.com/gerwaric/acquisition), whose registry
-the design brief was audited from. `pack`, `render`, `new`, `amend` and
-`import` are next. Everything the tool writes for a reader is written
+the design brief was audited from. `import`, `render`, `new` and
+`amend` are next. Everything the tool writes for a reader is written
 for the smallest model in use. Start at `AGENTS.md`; the design is
 `docs/design-brief.md`.
 

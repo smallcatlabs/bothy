@@ -15,23 +15,24 @@ title = "What every area must know"
 
 [area.schema]
 title = "The source: entry kinds, files, ids, namespaces, areas"
-paths = ["src/schema/**", "src/book/**"]
+paths = ["src/id.rs", "src/schema.rs", "src/config.rs", "src/book.rs"]
 
 [area.check]
 title = "Integrity: what check refuses and what it reports"
-paths = ["src/check/**"]
+paths = ["src/check.rs", "src/cite.rs"]
 
 [area.render]
 title = "Projections: templates and the markdown they write"
-paths = ["src/render/**"]
+paths = ["src/render.rs", "templates/**"]
 
 [area.pack]
 title = "Assembly: what a session reads for one task"
-paths = ["src/pack/**"]
+paths = ["src/pack.rs"]
+also = ["AGENTS.md"]
 
 [area.cli]
 title = "The command line, its output, and the servers over the same crate"
-paths = ["src/main.rs", "src/cli/**"]
+paths = ["src/main.rs"]
 
 [area.repo]
 title = "This repository: language, dependencies, consumers, release"

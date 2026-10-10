@@ -107,9 +107,12 @@ pub struct Park {
     pub measured: Option<String>,
 }
 
-/// Any entry kind bothy owns.
+/// Any entry shape bothy owns. The kind is the namespace's: an invariant
+/// and a principle use the [`Decision`] shape, so one struct serves
+/// three kinds and the kind decides where the entry renders and where
+/// it sits in a pack (B15).
 #[derive(Serialize, Debug)]
-#[serde(tag = "kind", rename_all = "lowercase")]
+#[serde(untagged)]
 pub enum Entry {
     Decision(Decision),
     Park(Park),

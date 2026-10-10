@@ -13,7 +13,9 @@ use serde::Serialize;
 use bothy::book::Book;
 use bothy::check;
 use bothy::cite;
+use bothy::config::Kind;
 use bothy::id::Id;
+use bothy::pack;
 use bothy::schema::Entry;
 
 /// bothy — the book the next session reads.
@@ -55,6 +57,36 @@ enum Command {
         /// An id, like B3 or K1.
         id: String,
     },
+
+    /// Assemble what a session reads before one task, as one document.
+    ///
+    /// Say what the task touches: an area, a file, or an entry. The pack
+    /// holds, in this order, the invariants, the principles, the
+    /// cross-cutting rulings, the areas' rulings and parks, the documents
+    /// to read also, and where each entry is held in code. Its footer
+    /// gives bytes, a token estimate and the commit it was built at.
+    Pack(PackArgs),
+}
+
+#[derive(Args)]
+struct PackArgs {
+    /// An area to pack; may be repeated.
+    #[arg(long, value_name = "NAME")]
+    area: Vec<String>,
+
+    /// A file about to be touched; its area is found through the paths
+    /// declared in bothy.toml. May be repeated.
+    #[arg(long, value_name = "FILE")]
+    path: Vec<String>,
+
+    /// One entry: itself, what it names, what names it, where it is held.
+    #[arg(long = "for", value_name = "ID")]
+    for_id: Option<String>,
+
+    /// Token budget. Blocks are removed from the tail until the pack fits,
+    /// and the footer names each one removed.
+    #[arg(long, value_name = "TOKENS")]
+    budget: Option<usize>,
 }
 
 #[derive(Args)]
@@ -84,8 +116,42 @@ struct ListArgs {
 enum KindArg {
     #[value(alias = "decision")]
     Decisions,
+    #[value(alias = "invariant")]
+    Invariants,
+    #[value(alias = "principle")]
+    Principles,
     #[value(alias = "park")]
     Parks,
+}
+
+impl KindArg {
+    fn kind(self) -> Kind {
+        match self {
+            KindArg::Decisions => Kind::Decision,
+            KindArg::Invariants => Kind::Invariant,
+            KindArg::Principles => Kind::Principle,
+            KindArg::Parks => Kind::Park,
+        }
+    }
+}
+
+/// One listed or shown entry, with the kind its namespace gives it.
+#[derive(Serialize)]
+struct Row<'a> {
+    kind: &'static str,
+    path: &'a std::path::Path,
+    #[serde(flatten)]
+    entry: &'a Entry,
+}
+
+fn kind_name(kind: Kind) -> &'static str {
+    match kind {
+        Kind::Decision => "decision",
+        Kind::Invariant => "invariant",
+        Kind::Principle => "principle",
+        Kind::Park => "park",
+        Kind::External => "external",
+    }
 }
 
 fn main() -> ExitCode {
@@ -134,7 +200,7 @@ fn run(cli: Cli) -> Result<ExitCode> {
         }
 
         Command::List(args) => {
-            let want_decisions = args.kind == KindArg::Decisions;
+            let want = args.kind.kind();
             let uncited: Option<std::collections::BTreeSet<Id>> = if args.uncited {
                 let citations = cite::scan(&book)?;
                 let cited: std::collections::BTreeSet<Id> =
@@ -152,7 +218,7 @@ fn run(cli: Cli) -> Result<ExitCode> {
             let rows: Vec<&bothy::book::Loaded> = book
                 .entries
                 .iter()
-                .filter(|l| matches!(l.entry, Entry::Decision(_)) == want_decisions)
+                .filter(|l| l.kind == want)
                 .filter(|l| args.area.as_deref().is_none_or(|a| l.entry.area() == a))
                 .filter(|l| match (args.all, args.retired) {
                     (true, _) => true,
@@ -162,7 +228,14 @@ fn run(cli: Cli) -> Result<ExitCode> {
                 .filter(|l| uncited.as_ref().is_none_or(|u| u.contains(&l.entry.id())))
                 .collect();
             if cli.json {
-                let items: Vec<&Entry> = rows.iter().map(|l| &l.entry).collect();
+                let items: Vec<Row> = rows
+                    .iter()
+                    .map(|l| Row {
+                        kind: kind_name(l.kind),
+                        path: &l.path,
+                        entry: &l.entry,
+                    })
+                    .collect();
                 println!("{}", serde_json::to_string_pretty(&items)?);
             } else {
                 let area_width = rows.iter().map(|l| l.entry.area().len()).max().unwrap_or(4);
@@ -204,14 +277,18 @@ fn run(cli: Cli) -> Result<ExitCode> {
             if cli.json {
                 #[derive(Serialize)]
                 struct Shown<'a> {
-                    path: &'a std::path::Path,
-                    entry: &'a Entry,
+                    #[serde(flatten)]
+                    row: Row<'a>,
                     names: Vec<Id>,
                     cited_by: Vec<cite::Citation>,
                 }
-                let shown = Shown {
+                let row = Row {
+                    kind: kind_name(loaded.kind),
                     path: &loaded.path,
                     entry: &loaded.entry,
+                };
+                let shown = Shown {
+                    row,
                     names,
                     cited_by: citations,
                 };
@@ -230,6 +307,26 @@ fn run(cli: Cli) -> Result<ExitCode> {
                         println!("  {}:{}", c.path.display(), c.line);
                     }
                 }
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+
+        Command::Pack(args) => {
+            let for_id = match &args.for_id {
+                Some(s) => Some(Id::parse(s).map_err(|e| anyhow!("{e}"))?),
+                None => None,
+            };
+            let req = pack::Request {
+                areas: args.area,
+                paths: args.path,
+                for_id,
+                budget: args.budget,
+            };
+            let pack = pack::build(&book, &req)?;
+            if cli.json {
+                println!("{}", serde_json::to_string_pretty(&pack)?);
+            } else {
+                print!("{}", pack.text);
             }
             Ok(ExitCode::SUCCESS)
         }

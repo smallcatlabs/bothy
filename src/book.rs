@@ -20,6 +20,8 @@ pub struct Loaded {
     pub path: PathBuf,
     /// The key of the namespace that owns it.
     pub namespace: String,
+    /// That namespace's kind.
+    pub kind: Kind,
     pub entry: Entry,
     /// The file's text, kept so a check can point at a line.
     pub source: String,
@@ -129,6 +131,7 @@ impl Book {
                     Ok(entry) => self.entries.push(Loaded {
                         path: rel,
                         namespace: key.clone(),
+                        kind,
                         entry,
                         source,
                     }),
@@ -303,7 +306,9 @@ pub enum Resolution {
 
 fn parse_entry(kind: Kind, source: &str) -> Result<Entry, toml::de::Error> {
     Ok(match kind {
-        Kind::Decision => Entry::Decision(toml::from_str::<Decision>(source)?),
+        Kind::Decision | Kind::Invariant | Kind::Principle => {
+            Entry::Decision(toml::from_str::<Decision>(source)?)
+        }
         Kind::Park => Entry::Park(toml::from_str::<Park>(source)?),
         Kind::External => unreachable!("external namespaces have no entry files"),
     })
