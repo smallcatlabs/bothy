@@ -356,27 +356,40 @@ Stated before the code, in the consumer's idiom:
    `decisions/*.md` byte for byte, after one normalization commit on
    the acquisition side whose diff is only whitespace, marker order
    and title terminators.
-3. *Not met as worded, 2026-10-10; what is left is the owner's. The
-   pack now carries every entry the three files hold (5 invariants, 6
-   principles, 15 cross-cutting rulings, 12 store rulings, 6 store
-   parks and the cross-cutting park, once B15 was amended), opens with
-   the orientation from `CONTEXT.md` (B27), lists the files the area
-   governs, and resolves by path: `pack --path
-   crates/acquisition-store/src/lib.rs` gives 45 entries in about 7,800
-   tokens at acquisition `e8bf16f7`. With one line added by hand to the
-   imported `bothy.toml`, it names `REFRESH-SLICE.md` with its size and
-   why to open it. What it still neither carries nor names: `AGENTS.md`
-   (6,886 bytes), which a session has read before it runs `pack`; the
-   prose in `CONTEXT.md` that says how to keep that file by hand, which
-   `new` and `check` replace; and five rules in `CONTEXT.md` that bind
-   sessions and have no id (four working-style bullets and the CLI
-   shape). Two questions are with the owner: whether the criterion
-   should stop counting `AGENTS.md`, and whether those five rules get
-   ids, are folded into P4 or P5, or stay out of packs on purpose.*
-   `bothy pack --area store` returns
-   in one call what a session
+3. *Not met, 2026-10-10, and what keeps it unmet is named. At
+   acquisition `e8bf16f7`, `pack --path
+   crates/acquisition-store/src/lib.rs` resolves and returns 45
+   entries in about 7,800 tokens: every invariant, principle, ruling
+   and park a store session reads in the two files, the orientation
+   (B27) and the files the area governs. With one `also` line added by
+   hand to the imported `bothy.toml` it names `REFRESH-SLICE.md` with
+   its size and why to open it. The residue is five rules in
+   `CONTEXT.md` that bind sessions and have no id: the four
+   working-style bullets and the CLI shape. The owner ruled 2026-10-10
+   that the bullets become P7 to P10 and the CLI shape takes a
+   frontends id, on acquisition's side, in the normalization commit
+   criterion 2 already allows. Until that commit they are neither
+   carried nor named, and the criterion is unmet. The rest of what the
+   pack leaves out is how to keep the two files by hand, which `new`
+   and `check` replace.* `bothy pack --path
+   crates/acquisition-store/src/lib.rs` resolves, and returns in one
+   call every ruling, park, principle and invariant a store session
+   reads today in `CONTEXT.md` and `decisions/store.md`, the project's
+   orientation, the files the area governs, and the name and size of
+   the slice record `AGENTS.md` routes it to, with its token count;
+   what those files hold that the pack neither carries nor names is
+   only how to keep the files, or has become an entry.
+
+   Reworded 2026-10-10 by the owner. The first wording is kept beside
+   it: "`bothy pack --area store` returns in one call what a session
    reads today across `AGENTS.md`, `CONTEXT.md` and
-   `decisions/store.md`, with its token count.
+   `decisions/store.md`, with its token count." `AGENTS.md` leaves the
+   criterion because it is the doorway: the file that tells a session
+   to run `pack`, which the pack therefore cannot replace. It does not
+   leave because a harness happens to load it. So the two numbers are
+   different things. The count in the pack's footer is the pack. What a
+   session pays is the pack, plus the doorway, plus whatever the pack
+   names that the session opens.
 4. *Met 2026-10-10 at acquisition master `946a4f51`, into a scratch
    directory, as B26 reads it: 46 network claims, 34 trade claims and
    78 findings with zero exceptions; `check` passes and resolves 844
