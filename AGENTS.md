@@ -62,8 +62,19 @@ parked, each with its trigger: `bothy list parks` shows them.
 `docs/book.md` is rendered from the entries: change an entry, run
 `bothy render`, commit both.
 
+Claims and findings are entry kinds too (B25): a book may declare a
+`kind = "claim"` or `kind = "finding"` namespace, and `check`, `list`,
+`show` and `pack --for` read them. `new` does not write them yet (K15),
+so one is written by hand or by an import. Ledger rows are parked (K14).
+
 `import` reads acquisition's registry from the owner's clone at
 `~/Development/GitHub/gerwaric/acquisition/spikes/rust-playground` and
-writes to a directory you name, never into that clone. Acquisition adopts
-bothy only after its search slice closes (the owner, 2026-10-10); until
-then it is test data, and `tests/import_acquisition.rs` is the test.
+writes to a directory you name, never into that clone. `import
+acquisition-master` reads the claims and findings on that repository's
+`master` branch, which is not the branch checked out there: extract it
+first with `git -C <clone> archive master | tar -x -C <scratch>` and
+give the import that directory (B26). Never check a branch out in the
+owner's clone. Acquisition adopts bothy only after its search slice
+closes (the owner, 2026-10-10); until then it is test data, and
+`tests/import_acquisition.rs` and `tests/import_master.rs` are the
+tests.

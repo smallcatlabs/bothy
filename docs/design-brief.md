@@ -356,10 +356,35 @@ Stated before the code, in the consumer's idiom:
    `decisions/*.md` byte for byte, after one normalization commit on
    the acquisition side whose diff is only whitespace, marker order
    and title terminators.
-3. `bothy pack --area store` returns in one call what a session
+3. *Not met as of 2026-10-10, at acquisition `96193b2b`, and the gap
+   is exact. The pack carries every entry those three files hold: 5
+   invariants, 6 principles, 15 cross-cutting rulings, 12 store rulings,
+   6 store parks and the one cross-cutting park (missing until B15 was
+   amended this day), 45 entries in 30,521 bytes, about 7,600 tokens,
+   against 32,820 bytes for the three files. What it neither carries
+   nor names is the reading that is not an entry: about 5,000 bytes of
+   `CONTEXT.md` (the orientation, the interfaces section, two
+   working-style bullets), all 6,886 bytes of `AGENTS.md`, and the
+   slice record `AGENTS.md` routes a store session to
+   (`REFRESH-SLICE.md`). The mechanism is there, an area's `also` list,
+   which a pack prints as "Read also" with sizes; the import writes no
+   `also` and leaves every area's `paths` empty, so `pack --path` does
+   not resolve on acquisition either.* `bothy pack --area store` returns
+   in one call what a session
    reads today across `AGENTS.md`, `CONTEXT.md` and
    `decisions/store.md`, with its token count.
-4. Master's claims and findings import under a second `bothy.toml`
+4. *Met 2026-10-10 at acquisition master `946a4f51`, into a scratch
+   directory, as B26 reads it: 46 network claims, 34 trade claims and
+   78 findings with zero exceptions; `check` passes and resolves 844
+   citations, reporting T15 as the one claim that states no confidence.
+   "No code change" could not be met as written, because the claim and
+   finding kinds did not exist (B25) and master's markdown needed its
+   own grammar; what holds is that `check`, `list`, `show` and `pack`
+   read master's book with no branch that names a consumer, and
+   everything that differs is in its `bothy.toml`. The playground's `N`
+   and `T` citations also resolve against master's imported claim files
+   when its `defined_in` points at them (section 4.7).* Master's claims
+   and findings import under a second `bothy.toml`
    with no code change — the P3 second-consumer test.
 
 Nothing else is v0. The MCP server, `seat`, `blame` and `stats` are v1,

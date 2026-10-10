@@ -41,15 +41,20 @@ rendering — are the design.
 
 Status: `check`, `list`, `show`, `pack`, `import`, `render`, `new`,
 `amend` and `park fire` work. Bothy's own book under `bothy/` is
-twenty-four rulings and thirteen parks, the first thirty written by
-hand before the tool existed and the latest five by `bothy new`;
+twenty-six rulings and fifteen parks, the first thirty written by
+hand before the tool existed and the rest by `bothy new`;
 `docs/book.md` is its rendering. `import` reads
 [acquisition](https://github.com/gerwaric/acquisition)'s markdown
 registry whole, 108 decisions, 53 parks, 6 principles and 5 invariants,
 with no exception, and `render` writes six of its eight registry files
 back byte for byte; the other two differ only by the marker order and
-index order the design brief predicted. Acquisition adopts the tool when
-its search slice closes; until then it is read-only test data.
+index order the design brief predicted. A second grammar, `bothy import
+acquisition-master`, reads the registers on acquisition's master branch
+into the two other kinds that exist, claims and findings: 80 claims and
+78 findings with no exception, under a second `bothy.toml` that
+declares no area. Ledger rows are parked (K14). Acquisition adopts the
+tool when its search slice closes; until then it is read-only test
+data.
 Everything the tool writes for a reader is written
 for the smallest model in use. Start at `AGENTS.md`; the design is
 `docs/design-brief.md`.
