@@ -153,10 +153,10 @@ pub fn kind_name(kind: Kind) -> &'static str {
     }
 }
 
-/// An area's live entries placed by its layout: the declared sections
-/// with their ids in order, then anything the layout did not place, by
-/// id, in the last section (or one named for the area). Notes say what
-/// was unplaced, so the layout can be kept current.
+/// An area's live entries placed by its layout (B21): the declared
+/// sections with their ids in order, then anything the layout did not
+/// place, by id, in the last section (or one named for the area). Notes
+/// say what was unplaced, so the layout can be kept current.
 pub fn area_view(book: &Book, name: &str, notes: &mut Vec<Diagnostic>) -> AreaView {
     let area = &book.config.area[name];
     let live: Vec<&Loaded> = book
