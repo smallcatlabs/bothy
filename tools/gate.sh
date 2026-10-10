@@ -10,3 +10,4 @@ cargo clippy --all-targets -- -D warnings
 cargo fmt --check
 git diff --check
 ./target/debug/bothy check
+RUSTDOCFLAGS="-D warnings" cargo doc --no-deps
