@@ -25,26 +25,32 @@ bothy list parks --area cli    # everything this area has deferred, with its tri
 bothy list decisions --uncited # rulings no code, test or document names yet
 bothy pack --area check        # what a session reads before touching the checks
 bothy render --check           # the markdown on disk matches the source
+bothy new decision --area cli --title "..." --ruling -   # the next id, a new file
+bothy amend B3                 # a ruling changed today: date it
+bothy park fire K8 --by <id>   # a trigger fired: stop the park, name the ruling
 ```
 
-The examples are real: they run against this repository's own book.
+The read examples are real: they run against this repository's own
+book. The last three write to it, so they show the form: `<id>` is the
+ruling you would write first.
 
 The source is TOML anyone can edit with a text editor, one entry per
 file. The index is built in memory every run and never written. The
 markdown is a projection. Those three roles — intent, derivation,
 rendering — are the design.
 
-Status: `check`, `list`, `show`, `pack`, `import` and `render` work.
-Bothy's own book under `bothy/` is twenty-one rulings and eleven parks,
-the first thirty written by hand before the tool existed; `docs/book.md`
-is its rendering. `import` reads
+Status: `check`, `list`, `show`, `pack`, `import`, `render`, `new`,
+`amend` and `park fire` work. Bothy's own book under `bothy/` is
+twenty-four rulings and thirteen parks, the first thirty written by
+hand before the tool existed and the latest five by `bothy new`;
+`docs/book.md` is its rendering. `import` reads
 [acquisition](https://github.com/gerwaric/acquisition)'s markdown
 registry whole, 108 decisions, 53 parks, 6 principles and 5 invariants,
 with no exception, and `render` writes six of its eight registry files
 back byte for byte; the other two differ only by the marker order and
 index order the design brief predicted. Acquisition adopts the tool when
-its search slice closes; until then it is read-only test data. `new` and
-`amend` are next. Everything the tool writes for a reader is written
+its search slice closes; until then it is read-only test data.
+Everything the tool writes for a reader is written
 for the smallest model in use. Start at `AGENTS.md`; the design is
 `docs/design-brief.md`.
 

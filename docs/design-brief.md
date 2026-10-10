@@ -298,9 +298,9 @@ verbs over the same crate, so a session's first call can be one `pack`.
 | `bothy show C54 [--json]` | the entry, what it cites, what cites it (code, tests, docs, help strings) | `grep -rn C54` |
 | `bothy list decision --area store [--uncited] [--since 2026-09-01]` | filtered rows, one line each | reading `decisions/store.md` whole |
 | `bothy cite C54` | every citing location with path:line | `docs-check`'s uncited report, inverted |
-| `bothy new decision --area store` | allocates the next id over history, writes the template, validates | editing the bullet by hand and hoping the id is free |
-| `bothy amend C54 [--verdict "..."]` | appends today's date, optional verdict | hand-editing "Amended …" |
-| `bothy park new / list [--trigger GUI] / fire K12 --by C110` | the park lifecycle | the Parked sections |
+| `bothy new decision --area store [--title … --ruling … --why …]` | takes the next id (one more than the largest present, B3), writes the fields given and a commented blank for each one missing, and prints what `check` says about the file (B22) | editing the bullet by hand and hoping the id is free |
+| `bothy amend C54 [--verdict "..."]` | appends today's date, optional verdict; refuses a second verdict (B23) | hand-editing "Amended …" |
+| `bothy new park` / `bothy list parks` / `bothy park fire K12 --by C110` | the park lifecycle; `park new` and `park list` were not built, since `new` and `list` already take a kind (B22, B24) | the Parked sections |
 | `bothy pack --area store` / `--path crates/acquisition-store/src/corpus.rs` / `--for C54` `[--budget 8000]` | the primary read surface (B15): invariants, principles, cross-cutting, the area's rulings and parks, the open slice's checklist, then the citation map (id → file:line); footer with bytes, token estimate and its estimator, and the commit; `--budget` trims from the tail and says what it trimmed | reading five files at session start |
 | `bothy blame C90` | the commit that introduced the entry; fills a missing `decided` on import | — |
 | `bothy import <path>` | the one-time migration from today's markdown; the audit script grown up | — |
