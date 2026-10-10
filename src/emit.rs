@@ -5,12 +5,49 @@
 //! other is a literal `'''` block whose closing delimiter ends the last
 //! line, so the stored value is exactly the text and nothing more.
 //!
-//! This is the writer `import` and, later, `new` use. `amend` edits an
-//! existing file through `toml_edit` instead and never rewrites it.
+//! This is the writer `import` uses, and `new` quotes its strings the
+//! same way. `amend` and `park fire` edit an existing file through
+//! `toml_edit` instead and never rewrite it.
 
 use std::fmt::Write as _;
 
 use crate::schema::{Date, Decision, Park};
+
+/// The order [`decision`] writes a decision's fields in. A verb that
+/// adds one field to an existing file puts it where this order says.
+pub const DECISION_KEYS: &[&str] = &[
+    "id",
+    "area",
+    "title",
+    "ruling",
+    "why",
+    "details",
+    "pinned",
+    "evidence",
+    "verdict",
+    "history",
+    "decided",
+    "decided_from",
+    "amended",
+    "status",
+    "superseded_by",
+];
+
+/// The order [`park`] writes a park's fields in.
+pub const PARK_KEYS: &[&str] = &[
+    "id",
+    "area",
+    "item",
+    "home",
+    "trigger",
+    "why",
+    "verdict",
+    "parked",
+    "parked_from",
+    "fired",
+    "fired_by",
+    "measured",
+];
 
 /// One TOML string value, quoted as the text requires.
 pub fn string(value: &str) -> String {

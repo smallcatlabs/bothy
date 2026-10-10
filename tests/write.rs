@@ -267,3 +267,87 @@ fn new_counts_a_file_that_does_not_parse_and_never_replaces_one() {
         "id = \n"
     );
 }
+
+#[test]
+fn amend_adds_one_line_and_changes_no_other() {
+    let dir = fixture("amend");
+    let amended = write::amend(&open(&dir), id("D1"), None, &day("2026-10-10")).unwrap();
+    assert!(amended.date_added && !amended.verdict_set);
+    let text = std::fs::read_to_string(dir.join("book/decisions/D001.toml")).unwrap();
+    assert_eq!(
+        text,
+        D1.replace(
+            "decided = 2026-09-02\n",
+            "decided = 2026-09-02\namended = [2026-10-10]\n"
+        ),
+        "the comments, the ''' block and the key order are the author's"
+    );
+
+    // The same day again adds nothing; a later day joins the list.
+    let again = write::amend(&open(&dir), id("D1"), None, &day("2026-10-10")).unwrap();
+    assert!(!again.date_added);
+    assert_eq!(
+        std::fs::read_to_string(dir.join("book/decisions/D001.toml")).unwrap(),
+        text
+    );
+    write::amend(&open(&dir), id("D1"), None, &day("2026-10-12")).unwrap();
+    let text = std::fs::read_to_string(dir.join("book/decisions/D001.toml")).unwrap();
+    assert!(
+        text.contains("amended = [2026-10-10, 2026-10-12]\n"),
+        "{text}"
+    );
+    assert!(failures(&open(&dir)).is_empty());
+}
+
+#[test]
+fn amend_sets_a_verdict_once_and_never_replaces_it() {
+    let dir = fixture("verdict");
+    let words = "I agree to 1 entirely";
+    let amended = write::amend(&open(&dir), id("D1"), Some(words), &day("2026-10-10")).unwrap();
+    assert!(amended.verdict_set);
+    let text = std::fs::read_to_string(dir.join("book/decisions/D001.toml")).unwrap();
+    let verdict = text.find("verdict = \"I agree to 1 entirely\"\n").unwrap();
+    assert!(
+        text.find("ruling = ").unwrap() < verdict && verdict < text.find("decided = ").unwrap(),
+        "the new field sits where a written entry has it:\n{text}"
+    );
+
+    let err = write::amend(
+        &open(&dir),
+        id("D1"),
+        Some("something else"),
+        &day("2026-10-11"),
+    )
+    .unwrap_err()
+    .to_string();
+    assert!(err.contains("already has a verdict"), "{err}");
+    assert_eq!(
+        std::fs::read_to_string(dir.join("book/decisions/D001.toml")).unwrap(),
+        text,
+        "a refusal writes nothing, not even the date"
+    );
+}
+
+#[test]
+fn amend_refuses_a_park_a_retired_ruling_and_an_unknown_id() {
+    let dir = fixture("amend-refusals");
+    std::fs::write(
+        dir.join("book/decisions/D002.toml"),
+        "id = \"D2\"\narea = \"store\"\ntitle = \"Old\"\nruling = \"\"\nstatus = \"superseded\"\nsuperseded_by = \"D1\"\n",
+    )
+    .unwrap();
+    let book = open(&dir);
+    let today = day("2026-10-10");
+    let refusal = |s: &str| {
+        write::amend(&book, id(s), None, &today)
+            .unwrap_err()
+            .to_string()
+    };
+    assert!(refusal("P1").contains("is a park"), "{}", refusal("P1"));
+    assert!(
+        refusal("D2").contains("superseded by D1; amend D1 instead"),
+        "{}",
+        refusal("D2")
+    );
+    assert!(refusal("D9").contains("no entry D9"), "{}", refusal("D9"));
+}

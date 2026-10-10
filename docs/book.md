@@ -143,6 +143,15 @@ The date a write verb records is the calendar day on the machine's own
 clock and time zone, and `--date` overrides it. The verbs are functions
 in the library that take the date as an argument; the command line is
 one caller and a server will be another (K8). *Why:* The daily user is an agent in a shell, with no terminal to answer a prompt and no editor to be opened into. One call that writes a whole entry is the pleasant path; a blank that keeps the gate red until it is filled is the safe one. Decided 2026-10-10.
+- **B23 — `amend` dates a change to a ruling in force, adds one line, and never replaces the owner's words** `bothy amend <id>` adds today's date to `amended`, once however many
+times it runs that day, and with `--verdict` sets the owner's words
+where the entry has none. It refuses a park, a ruling that is
+superseded or retired (and names the ruling to amend instead), and a
+second verdict. The author changes the ruling's text by hand first; the
+verb dates the change. A field it adds goes on the line where a written
+entry has it, and no other line changes: comments, quoting and key
+order stay the author's (B14). The edited text is read back as an entry
+before it is written, and an edit that would not read is not written. *Why:* A verdict is a quotation and a date list is a record; a tool that overwrites either leaves git as the only witness. The text of the change is the author's to write, so the verb has no flag for it. Decided 2026-10-10.
 
 Parked, each with the trigger that reopens it:
 

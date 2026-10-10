@@ -1,4 +1,5 @@
-//! The write verbs. `new` adds an entry (B22). Each one reads the book,
+//! The write verbs. `new` adds an entry (B22) and `amend` dates a
+//! change to a ruling (B23). Each one reads the book,
 //! changes one or two entry files under the directories `bothy.toml`
 //! names and nothing else (B4), and says what it wrote. None of them
 //! prompts or opens an editor: the caller is as often an agent in a
@@ -13,14 +14,15 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow, bail};
 use serde::Serialize;
+use toml_edit::{Array, DocumentMut, Item, value};
 
-use crate::book::{Book, parse_entry};
+use crate::book::{Book, Loaded, parse_entry};
 use crate::check::{self, Diagnostic};
 use crate::config::Kind;
 use crate::emit;
 use crate::id::Id;
 use crate::render::kind_name;
-use crate::schema::Date;
+use crate::schema::{Date, Entry};
 
 /// The calendar day on this machine's clock, in its own time zone
 /// (B22). An entry written at six in the evening in Denver is dated
@@ -345,4 +347,135 @@ fn park_text(id: Id, draft: &Draft, today: &Date) -> (String, Vec<&'static str>)
         optional_note(&mut out, &optional);
     }
     (out, missing)
+}
+
+/// The entry `id` names, when this book owns its file.
+fn owned(book: &Book, id: Id) -> Result<&Loaded> {
+    book.get(id).ok_or_else(|| {
+        if book.knows(id) {
+            anyhow!(
+                "{id} is defined in an external namespace; bothy does not own its file and cannot change it"
+            )
+        } else {
+            anyhow!(
+                "no entry {id} in this book; `bothy list decisions` and `bothy list parks` show what exists"
+            )
+        }
+    })
+}
+
+fn document(loaded: &Loaded) -> Result<DocumentMut> {
+    loaded
+        .source
+        .parse()
+        .with_context(|| format!("cannot read {} as TOML", loaded.path.display()))
+}
+
+fn toml_date(date: &Date) -> toml_edit::Datetime {
+    date.to_string()
+        .parse()
+        .expect("a plain date is a TOML datetime")
+}
+
+/// Adds `key` to an entry file on the line where `emit` would have
+/// written it, and leaves every other line as its author had it (B14).
+/// `order` is the kind's field order; a key the order does not know
+/// goes last.
+fn insert_in_order(doc: &mut DocumentMut, key: &str, item: Item, order: &[&str]) {
+    let rank = |k: &str| order.iter().position(|o| *o == k);
+    let mut keys: Vec<String> = doc.iter().map(|(k, _)| k.to_string()).collect();
+    let at = rank(key)
+        .and_then(|mine| keys.iter().position(|k| rank(k).is_some_and(|r| r > mine)))
+        .unwrap_or(keys.len());
+    keys.insert(at, key.to_string());
+    doc.insert(key, item);
+    let place = |k: &str| keys.iter().position(|x| x == k);
+    doc.as_table_mut()
+        .sort_values_by(|a, _, b, _| place(a.get()).cmp(&place(b.get())));
+}
+
+/// Writes an edited entry back, having first read the new text the way
+/// the book will: an edit that would leave the file unreadable is
+/// refused and nothing is written.
+fn save(book: &Book, loaded: &Loaded, doc: &DocumentMut) -> Result<()> {
+    let text = doc.to_string();
+    parse_entry(loaded.kind, &text).map_err(|e| {
+        anyhow!(
+            "the change would leave {} unreadable ({}); nothing was written",
+            loaded.path.display(),
+            e.message()
+        )
+    })?;
+    std::fs::write(book.root.join(&loaded.path), text)
+        .with_context(|| format!("cannot write {}", loaded.path.display()))
+}
+
+/// What `amend` did.
+#[derive(Serialize, Debug)]
+pub struct Amended {
+    pub id: Id,
+    /// Relative to the root.
+    pub path: PathBuf,
+    pub date: Date,
+    /// False when the entry was already amended on this date.
+    pub date_added: bool,
+    pub verdict_set: bool,
+}
+
+/// Records that a ruling changed today (B23): adds the date to
+/// `amended`, once per day, and the owner's words as `verdict` when
+/// given. The author changes the ruling's text; this dates the change.
+/// Refuses a park, a ruling no longer in force, and a verdict where
+/// one already stands.
+pub fn amend(book: &Book, id: Id, verdict: Option<&str>, today: &Date) -> Result<Amended> {
+    let loaded = owned(book, id)?;
+    let Entry::Decision(d) = &loaded.entry else {
+        bail!(
+            "{id} is a park, and a park is not amended: edit its file, or stop it with `bothy park fire {id} --by <the ruling that fired it>`"
+        );
+    };
+    if d.status != "ruled" {
+        let by = match d.superseded_by {
+            Some(by) => format!(" by {by}; amend {by} instead"),
+            None => String::new(),
+        };
+        bail!(
+            "{id} is {}{by}; only a ruling in force is amended",
+            d.status
+        );
+    }
+    if let (Some(_), Some(old)) = (verdict, &d.verdict) {
+        bail!(
+            "{id} already has a verdict, \"{}\", and amend does not replace the owner's words; edit {} to keep both, then run amend without --verdict",
+            old.trim(),
+            loaded.path.display()
+        );
+    }
+
+    let mut doc = document(loaded)?;
+    let date_added = !d.amended.contains(today);
+    if date_added {
+        match doc.get_mut("amended").and_then(Item::as_array_mut) {
+            Some(dates) => dates.push(toml_date(today)),
+            None => {
+                let mut dates = Array::new();
+                dates.push(toml_date(today));
+                insert_in_order(&mut doc, "amended", value(dates), emit::DECISION_KEYS);
+            }
+        }
+    }
+    if let Some(words) = verdict {
+        insert_in_order(&mut doc, "verdict", value(words), emit::DECISION_KEYS);
+    }
+    if date_added || verdict.is_some() {
+        save(book, loaded, &doc)?;
+    }
+
+    Ok(Amended {
+        id,
+        path: loaded.path.clone(),
+        date: today.clone(),
+        date_added,
+        verdict_set: verdict.is_some(),
+    })
 }

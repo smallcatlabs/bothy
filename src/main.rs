@@ -98,6 +98,26 @@ enum Command {
     /// A decision, invariant or principle takes --title, --ruling and
     /// --why. A park takes --item, --home, --trigger and --why.
     New(NewArgs),
+
+    /// Record that a ruling changed today: add the date to `amended`.
+    ///
+    /// Change the ruling's text in its file first; this dates the change
+    /// and touches no other line. Run twice in one day, it adds the date
+    /// once. A park or a ruling no longer in force is refused.
+    Amend {
+        /// The ruling, like C54.
+        id: String,
+
+        /// The owner's words, quoted exactly, when the change was their
+        /// call. Refused if the entry already has a verdict.
+        #[arg(long, value_name = "TEXT")]
+        verdict: Option<String>,
+
+        /// The date to record, like 2026-10-09. Default: today, by this
+        /// machine's clock and time zone.
+        #[arg(long, value_name = "DATE")]
+        date: Option<String>,
+    },
 }
 
 #[derive(Args)]
@@ -551,6 +571,35 @@ fn run(cli: Cli) -> Result<ExitCode> {
                         "next: open the file and fill in {}, then run `bothy check`{render}",
                         fields.join(", ")
                     );
+                }
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+
+        Command::Amend { id, verdict, date } => {
+            let id = Id::parse(&id).map_err(|e| anyhow!("{e}"))?;
+            let today = date_or_today(date.as_deref())?;
+            let amended = write::amend(&book, id, verdict.as_deref(), &today)?;
+            if cli.json {
+                println!("{}", serde_json::to_string_pretty(&amended)?);
+            } else {
+                let path = amended.path.display();
+                let date = &amended.date;
+                match (amended.date_added, amended.verdict_set) {
+                    (true, true) => {
+                        println!("amended {id}: {path} now carries {date} and the verdict")
+                    }
+                    (true, false) => println!("amended {id}: {path} now carries {date}"),
+                    (false, true) => println!(
+                        "{id} was already amended on {date}; {path} now carries the verdict"
+                    ),
+                    (false, false) => {
+                        println!("{id} was already amended on {date}; nothing was written")
+                    }
+                }
+                if !book.config.projection.is_empty() && (amended.date_added || amended.verdict_set)
+                {
+                    println!("next: run `bothy render`");
                 }
             }
             Ok(ExitCode::SUCCESS)
