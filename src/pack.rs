@@ -1,9 +1,10 @@
 //! `pack`: what a session reads before one task, in one call (B15).
 //!
 //! The order is fixed and goes from what binds everything to what binds
-//! least: the project's orientation (B27), invariants, principles, cross-cutting rulings, the areas'
-//! rulings, their parks, the cross-cutting parks, the documents to read
-//! also, then the citation map that says where each ruling is held. Retired entries are omitted
+//! least: the project's orientation (B27), invariants, principles,
+//! cross-cutting rulings, the areas' rulings, their parks, the
+//! cross-cutting parks, the documents to read also, then the citation
+//! map that says where each ruling is held. Retired entries are omitted
 //! (B3). A budget trims whole blocks from the tail and the footer names
 //! each one trimmed; nothing leaves silently.
 //!
@@ -291,15 +292,25 @@ fn pack_areas(
     let also: Vec<String> = areas
         .iter()
         .flat_map(|a| book.config.area[a].also.iter())
-        .map(|doc| match std::fs::metadata(book.root.join(doc)) {
-            Ok(m) => format!("- `{doc}` ({} bytes)", m.len()),
-            Err(_) => format!("- `{doc}` (missing)"),
+        .map(|doc| {
+            let path = doc.path();
+            let size = match std::fs::metadata(book.root.join(path)) {
+                Ok(m) => format!("{} bytes", m.len()),
+                Err(_) => "missing".to_string(),
+            };
+            match doc.why() {
+                Some(why) => format!("- `{path}` ({size}): {why}"),
+                None => format!("- `{path}` ({size})"),
+            }
         })
         .collect();
     if !also.is_empty() {
         blocks.push(Block {
             label: "the read-also list".into(),
-            text: format!("## Read also\n\n{}\n\n", also.join("\n")),
+            text: format!(
+                "## Read also (not in this pack; open what your task needs)\n\n{}\n\n",
+                also.join("\n")
+            ),
         });
     }
     push_citation_map(blocks, included, citations);

@@ -137,9 +137,14 @@ Parked, each with the trigger that reopens it:
 - **B15 — pack is the primary read surface** It takes `--area <name>`, `--path <file>` (the area resolved through the
 paths `bothy.toml` declares) or `--for <id>`. Its order is fixed:
 invariants, principles, cross-cutting rulings, the area's rulings, its
-parks, the cross-cutting parks, the open slice's checklist, then the
+parks, the cross-cutting parks, the documents to read also, then the
 citation map from id to file:line so the reader knows where each
-mechanism lives. A cross-cutting park is in every pack for the reason a
+mechanism lives. A document to read also is one the area's `also` list
+names: the pack gives its path, its size and, when the list states one,
+the reason to open it, and never its text (K11 holds inlining a
+section). The ruling first promised "the open slice's checklist" here,
+which was never built; the named document is what exists (amended
+2026-10-10). A cross-cutting park is in every pack for the reason a
 cross-cutting ruling is: scope deferred across every area is deferred
 in this one (amended 2026-10-10, when the store pack of acquisition was
 found to leave out the one park its `CONTEXT.md` shows every session). Its footer

@@ -37,7 +37,7 @@ paths = ["src/render.rs", "templates/**"]
 [area.pack]
 title = "Assembly: what a session reads for one task"
 paths = ["src/pack.rs"]
-also = ["AGENTS.md"]
+also = [{ path = "AGENTS.md", why = "how to work in this repository: the gate, the write verbs, what exists" }]
 
 [area.cli]
 title = "The command line, its output, and the servers over the same crate"

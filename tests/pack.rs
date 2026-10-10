@@ -68,6 +68,32 @@ fn area_pack_has_the_fixed_order_and_only_its_area() {
 }
 
 #[test]
+fn a_document_to_read_also_is_named_with_its_size_and_why() {
+    let book = own_book();
+    let pack = pack::build(
+        &book,
+        &Request {
+            areas: vec!["pack".into()],
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let t = &pack.text;
+    let also = pos(t, "## Read also");
+    assert!(pos(t, "## Parked across every area") < also);
+    assert!(also < pos(t, "## Where each entry is held"));
+    let line = t[also..]
+        .lines()
+        .find(|l| l.starts_with("- `AGENTS.md` ("))
+        .expect("the document is named");
+    assert!(line.contains(" bytes): how to work in this repository"));
+    assert!(
+        !t.contains("# bothy — where to start"),
+        "the document is named, never inlined (K11)"
+    );
+}
+
+#[test]
 fn path_resolves_to_its_area() {
     let book = own_book();
     let pack = pack::build(

@@ -100,13 +100,46 @@ pub struct Area {
     /// Documents a session reads before touching this area, which a pack
     /// names with their sizes but does not inline (K11).
     #[serde(default)]
-    pub also: Vec<String>,
+    pub also: Vec<Also>,
     /// The rendered file's sections, in order, each with its ids in order.
     #[serde(default)]
     pub sections: Vec<Section>,
     /// The rendered file's parks, in order.
     #[serde(default)]
     pub parks: Vec<Id>,
+}
+
+/// One document in an area's `also` list: a bare path, or a path with
+/// the reason to open it, `{ path = "...", why = "..." }`. The reason
+/// is what tells a reader whether the file is worth its size (B15).
+#[derive(Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum Also {
+    Path(String),
+    Reasoned(AlsoReasoned),
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct AlsoReasoned {
+    pub path: String,
+    pub why: String,
+}
+
+impl Also {
+    pub fn path(&self) -> &str {
+        match self {
+            Also::Path(p) => p,
+            Also::Reasoned(r) => &r.path,
+        }
+    }
+
+    pub fn why(&self) -> Option<&str> {
+        match self {
+            Also::Path(_) => None,
+            Also::Reasoned(r) => Some(r.why.trim()).filter(|w| !w.is_empty()),
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
