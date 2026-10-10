@@ -40,7 +40,10 @@ fn acquisition_imports_whole_and_passes_check() {
         "{} decisions",
         imported.decisions.len()
     );
-    assert!(imported.parks.len() >= 53, "{} parks", imported.parks.len());
+    // A park is deleted there when its trigger fires, so the park count
+    // falls as well as rises (53 at `9e934746`, 52 at `075e4d2c`) and
+    // is no floor; the count the summary reports is checked below.
+    assert!(!imported.parks.is_empty());
     assert_eq!(imported.principles.len(), 6);
     assert_eq!(imported.invariants.len(), 5);
     assert_eq!(
