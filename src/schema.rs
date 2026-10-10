@@ -15,6 +15,13 @@ use crate::id::Id;
 pub struct Date(toml::value::Datetime);
 
 impl Date {
+    /// `2026-10-09`; anything else is `None`.
+    pub fn parse(s: &str) -> Option<Date> {
+        let dt: toml::value::Datetime = s.parse().ok()?;
+        let d = Date(dt);
+        d.is_plain_date().then_some(d)
+    }
+
     /// A date carries a day and nothing else; a time or an offset here is
     /// a mistake the check reports.
     pub fn is_plain_date(&self) -> bool {
@@ -40,8 +47,14 @@ impl Serialize for Date {
 pub struct Decision {
     pub id: Id,
     pub area: String,
+    /// The bold lead, verbatim, with whatever terminator its author gave
+    /// it. A principle has none; a decision or invariant must.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub title: String,
     pub ruling: String,
+    /// The heading the entry sits under in its area's rendered file.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub section: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub why: Option<String>,
     /// Where the mechanism lives: a module doc, a file.
@@ -63,6 +76,12 @@ pub struct Decision {
     /// The owner's words, when quoted.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verdict: Option<String>,
+    /// The dating sentence as its author wrote it, when an imported entry
+    /// carries one ("Ruled 2026-09-17 (\"I agree to 1 entirely\")."); it
+    /// renders last and is never reflowed (B18). `decided` and `amended`
+    /// are read from it when they are not set.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub history: Option<String>,
     /// One of the consumer's `decision_status` values; `ruled` by default.
     #[serde(default = "default_status")]
     pub status: String,
@@ -89,13 +108,18 @@ pub struct Park {
     pub item: String,
     /// Where it lands when built.
     pub home: String,
-    /// What reopens it. `"never"` is legal and means what it says.
-    pub trigger: String,
+    /// What reopens it. `"never"` is legal and means what it says. A park
+    /// without one is reported by `check`, not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trigger: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub why: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verdict: Option<String>,
     pub parked: Date,
+    /// `"git"` when the importer took the date from history (B13).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parked_from: Option<String>,
     /// Set when the trigger fired; the file stays (B3).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fired: Option<Date>,
@@ -179,11 +203,16 @@ impl Entry {
                 if let Some(v) = &d.verdict {
                     out.push(("verdict", v));
                 }
+                if let Some(h) = &d.history {
+                    out.push(("history", h));
+                }
             }
             Entry::Park(p) => {
                 out.push(("item", p.item.as_str()));
                 out.push(("home", p.home.as_str()));
-                out.push(("trigger", p.trigger.as_str()));
+                if let Some(t) = &p.trigger {
+                    out.push(("trigger", t));
+                }
                 if let Some(w) = &p.why {
                     out.push(("why", w));
                 }

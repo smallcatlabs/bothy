@@ -379,7 +379,9 @@ fn render_entry(l: &Loaded) -> String {
             if let Some(v) = &d.verdict {
                 let _ = write!(s, " Owner, verbatim: \"{}\"", v.trim());
             }
-            if let Some(date) = &d.decided {
+            if let Some(h) = &d.history {
+                let _ = write!(s, " {}", h.trim());
+            } else if let Some(date) = &d.decided {
                 let _ = write!(s, " Decided {date}");
                 if !d.amended.is_empty() {
                     let dates: Vec<String> = d.amended.iter().map(ToString::to_string).collect();
@@ -389,14 +391,10 @@ fn render_entry(l: &Loaded) -> String {
             }
         }
         Entry::Park(p) => {
-            let _ = write!(
-                s,
-                "- **{}** {} → {}. Trigger: {}",
-                p.id,
-                p.item.trim(),
-                p.home.trim(),
-                p.trigger.trim()
-            );
+            let _ = write!(s, "- **{}** {} → {}", p.id, p.item.trim(), p.home.trim());
+            if let Some(t) = &p.trigger {
+                let _ = write!(s, ". Trigger: {}", t.trim());
+            }
             if let Some(why) = &p.why {
                 let _ = write!(s, " ({})", why.trim());
             }

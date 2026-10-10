@@ -34,13 +34,14 @@ file. The index is built in memory every run and never written. The
 markdown is a projection. Those three roles — intent, derivation,
 rendering — are the design.
 
-Status: `check`, `list`, `show` and `pack` work, against bothy's own
-book under `bothy/`: twenty rulings and eleven parks, the first thirty
-written by hand before the tool existed. The tool is its own first
-consumer; its second is
-[acquisition](https://github.com/gerwaric/acquisition), whose registry
-the design brief was audited from. `import`, `render`, `new` and
-`amend` are next. Everything the tool writes for a reader is written
+Status: `check`, `list`, `show`, `pack` and `import` work. Bothy's own
+book under `bothy/` is twenty rulings and eleven parks, the first thirty
+written by hand before the tool existed. `import` reads
+[acquisition](https://github.com/gerwaric/acquisition)'s markdown
+registry whole, 108 decisions, 53 parks, 6 principles and 5 invariants,
+with no exception, and `check` passes on the result in half a second.
+Acquisition adopts the tool when its search slice closes; until then it
+is read-only test data. `render`, `new` and `amend` are next. Everything the tool writes for a reader is written
 for the smallest model in use. Start at `AGENTS.md`; the design is
 `docs/design-brief.md`.
 

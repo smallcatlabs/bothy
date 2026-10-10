@@ -332,8 +332,13 @@ Stated before the code, in the consumer's idiom:
 
 0. `bothy check` passes on bothy's own book in this repository (B16),
    and reports every decision as uncited until the code that holds it
-   cites it.
-1. `bothy import` over `spikes/rust-playground` at `bfa59416`
+   cites it. *Met 2026-10-09.*
+1. *Met 2026-10-10 at acquisition `9e934746`, into a scratch directory:
+   108 decisions, 53 parks, 6 principles, 5 invariants, zero exceptions;
+   `check` passes with C16 uncited and three parks without a trigger, and
+   resolves 3,480 citations. The import also found `S256` (PKCE) read as
+   an id, answered by a scope `except` (B10 amended), and the pricing
+   area titled two ways.* `bothy import` over `spikes/rust-playground` at `bfa59416`
    produces 108 decisions, 54 parks (53 area, 1 cross-cutting), 6
    principles and 5 invariants as
    files, and `bothy check` passes on them with the same findings

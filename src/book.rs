@@ -201,7 +201,9 @@ impl Book {
                     .with_context(|| format!("cannot read {}", abs.display()))?;
                 for line in text.lines() {
                     for cap in re.captures_iter(line) {
-                        let Some(m) = cap.get(1) else { continue };
+                        let Some(m) = cap.iter().skip(1).flatten().next() else {
+                            continue;
+                        };
                         let s = m.as_str();
                         let parsed = if s.starts_with(|c: char| c.is_ascii_digit()) {
                             s.parse::<u32>().ok().map(|n| Id { letter, number: n })
@@ -252,7 +254,7 @@ impl Book {
             .namespace
             .iter()
             .filter(|(k, ns)| ns.letter_or(k) == letter)
-            .filter(|(_, ns)| scope_matches(&ns.scope, rel))
+            .filter(|(_, ns)| scope_matches(&ns.scope, rel) && !scope_matches(&ns.except, rel))
             .map(|(k, _)| k.as_str())
             .collect()
     }
@@ -322,6 +324,9 @@ fn id_from_stem(stem: &str) -> Option<Id> {
 }
 
 fn scope_matches(scope: &[String], rel: &Path) -> bool {
+    if scope.is_empty() {
+        return false;
+    }
     let mut builder = globset::GlobSetBuilder::new();
     for g in scope {
         if let Ok(glob) = globset::GlobBuilder::new(g)

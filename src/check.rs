@@ -181,6 +181,14 @@ fn check_fields(book: &Book, out: &mut Vec<Diagnostic>) {
         }
         match &loaded.entry {
             Entry::Decision(d) => {
+                if d.title.trim().is_empty() && loaded.kind != Kind::Principle {
+                    out.push(Diagnostic::fail(
+                        path.clone(),
+                        loaded.line_of("ruling"),
+                        "the entry has no title".into(),
+                        Some("add `title = \"...\"`, the bold lead a reader skims; only a principle may go without".into()),
+                    ));
+                }
                 if !statuses.iter().any(|s| s == &d.status) {
                     out.push(Diagnostic::fail(
                         path.clone(),
@@ -219,6 +227,13 @@ fn check_fields(book: &Book, out: &mut Vec<Diagnostic>) {
                 }
             }
             Entry::Park(p) => {
+                if p.trigger.is_none() {
+                    out.push(Diagnostic::note(
+                        path.clone(),
+                        loaded.line_of("home"),
+                        format!("park {} states no trigger; deferral with no trigger is re-argued every time it is read", p.id),
+                    ));
+                }
                 match (&p.fired, &p.fired_by) {
                     (Some(_), None) => out.push(Diagnostic::fail(
                         path.clone(),

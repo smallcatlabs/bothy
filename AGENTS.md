@@ -48,6 +48,12 @@ rulings are entries in `bothy/decisions/` and its deferred work in
 
 ## What exists and what does not
 
-`check`, `list`, `show` and `pack` exist. `render`, `new`, `amend`,
-`park fire` and `import` are described in the brief and do not exist
+`check`, `list`, `show`, `pack` and `import` exist. `render`, `new`,
+`amend` and `park fire` are described in the brief and do not exist
 yet; the uncited rulings `check` reports are the ones waiting for them.
+
+`import` reads acquisition's registry from the owner's clone at
+`~/Development/GitHub/gerwaric/acquisition/spikes/rust-playground` and
+writes to a directory you name, never into that clone. Acquisition adopts
+bothy only after its search slice closes (the owner, 2026-10-10); until
+then it is test data, and `tests/import_acquisition.rs` is the test.

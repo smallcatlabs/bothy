@@ -15,6 +15,7 @@ use bothy::check;
 use bothy::cite;
 use bothy::config::Kind;
 use bothy::id::Id;
+use bothy::import;
 use bothy::pack;
 use bothy::schema::Entry;
 
@@ -66,6 +67,34 @@ enum Command {
     /// to read also, and where each entry is held in code. Its footer
     /// gives bytes, a token estimate and the commit it was built at.
     Pack(PackArgs),
+
+    /// Migrate a markdown registry into entries, once. Writes nothing
+    /// under the source tree.
+    Import(ImportArgs),
+}
+
+#[derive(Args)]
+struct ImportArgs {
+    /// The grammar to read. Only `acquisition` exists.
+    #[arg(value_enum)]
+    grammar: Grammar,
+
+    /// The source: the directory holding CONTEXT.md and decisions/.
+    source: PathBuf,
+
+    /// Where to write bothy.toml and bothy/. Outside the source tree the
+    /// config points at the source by absolute path; inside, by relative.
+    #[arg(long, value_name = "DIR")]
+    out: PathBuf,
+
+    /// Parse and report, writing nothing.
+    #[arg(long)]
+    dry_run: bool,
+}
+
+#[derive(ValueEnum, Clone, Copy)]
+enum Grammar {
+    Acquisition,
 }
 
 #[derive(Args)]
@@ -166,6 +195,9 @@ fn main() -> ExitCode {
 }
 
 fn run(cli: Cli) -> Result<ExitCode> {
+    if let Command::Import(args) = &cli.command {
+        return run_import(args, cli.json);
+    }
     let book = match &cli.book {
         Some(path) => Book::open(path)?,
         None => Book::find_and_open(&std::env::current_dir()?)?,
@@ -311,6 +343,8 @@ fn run(cli: Cli) -> Result<ExitCode> {
             Ok(ExitCode::SUCCESS)
         }
 
+        Command::Import(_) => unreachable!("handled before the book is opened"),
+
         Command::Pack(args) => {
             let for_id = match &args.for_id {
                 Some(s) => Some(Id::parse(s).map_err(|e| anyhow!("{e}"))?),
@@ -331,6 +365,50 @@ fn run(cli: Cli) -> Result<ExitCode> {
             Ok(ExitCode::SUCCESS)
         }
     }
+}
+
+fn run_import(args: &ImportArgs, json: bool) -> Result<ExitCode> {
+    let Grammar::Acquisition = args.grammar;
+    let imported = import::parse_playground(&args.source)?;
+    if !args.dry_run {
+        let summary = import::write(&imported, &args.out, &args.source)?;
+        if !json {
+            println!(
+                "wrote {} entries; the book is {}",
+                summary.written,
+                summary.config.display()
+            );
+        }
+    }
+    if json {
+        #[derive(Serialize)]
+        struct Out<'a> {
+            decisions: usize,
+            invariants: usize,
+            principles: usize,
+            parks: usize,
+            areas: Vec<&'a String>,
+            exceptions: &'a [String],
+            undeclared: &'a std::collections::BTreeMap<char, usize>,
+        }
+        let out = Out {
+            decisions: imported.decisions.len(),
+            invariants: imported.invariants.len(),
+            principles: imported.principles.len(),
+            parks: imported.parks.len(),
+            areas: imported.areas.keys().collect(),
+            exceptions: &imported.exceptions,
+            undeclared: &imported.undeclared,
+        };
+        println!("{}", serde_json::to_string_pretty(&out)?);
+    } else {
+        print!("{}", import::report(&imported));
+    }
+    Ok(if imported.exceptions.is_empty() {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::from(1)
+    })
 }
 
 fn print_entry(entry: &Entry, path: &std::path::Path) {
@@ -359,6 +437,9 @@ fn print_entry(entry: &Entry, path: &std::path::Path) {
             if let Some(v) = &d.verdict {
                 println!("\nVerdict: \"{}\"", v.trim_end());
             }
+            if let Some(h) = &d.history {
+                println!("\n{}", h.trim_end());
+            }
             print_list("Details", &d.details);
             print_list("Pinned", &d.pinned);
             print_list("Evidence", &d.evidence);
@@ -376,7 +457,10 @@ fn print_entry(entry: &Entry, path: &std::path::Path) {
             }
             println!("{line}");
             println!("\nHome: {}", p.home.trim_end());
-            println!("Trigger: {}", p.trigger.trim_end());
+            match &p.trigger {
+                Some(t) => println!("Trigger: {}", t.trim_end()),
+                None => println!("Trigger: none stated"),
+            }
             if let Some(why) = &p.why {
                 println!("Why: {}", why.trim_end());
             }

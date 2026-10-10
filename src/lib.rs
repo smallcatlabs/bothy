@@ -14,13 +14,16 @@
 //! [`schema`] is the entry kinds; [`book`] loads a consumer's whole book
 //! into memory (B8); [`cite`] finds where ids are named; [`check`] runs
 //! the integrity checks (B20); [`pack`] assembles what a session reads
-//! for one task (B15).
+//! for one task (B15); [`emit`] writes an entry as TOML; [`import`] is
+//! the one-time migration of acquisition's markdown registry.
 
 pub mod book;
 pub mod check;
 pub mod cite;
 pub mod config;
+pub mod emit;
 pub mod id;
+pub mod import;
 pub mod pack;
 pub mod schema;
 

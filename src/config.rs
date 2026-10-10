@@ -7,6 +7,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
+use indexmap::IndexMap;
 use serde::Deserialize;
 
 /// The file name the tool looks for, walking up from the working
@@ -20,9 +21,9 @@ pub struct Config {
     /// Every other path in this file is relative to the root.
     #[serde(default = "default_root")]
     pub root: PathBuf,
-    /// Declared areas, keyed by name (B19).
+    /// Declared areas, keyed by name, in the order they render (B19).
     #[serde(default)]
-    pub area: BTreeMap<String, Area>,
+    pub area: IndexMap<String, Area>,
     /// Namespaces, keyed by a name that is usually the letter (B10).
     #[serde(default)]
     pub namespace: BTreeMap<String, Namespace>,
@@ -42,6 +43,12 @@ fn default_root() -> PathBuf {
 #[serde(deny_unknown_fields)]
 pub struct Area {
     pub title: String,
+    /// The title as the consumer's index table shows it, when it differs.
+    pub index_title: Option<String>,
+    /// The paragraph under the area file's heading, for `render`.
+    pub intro: Option<String>,
+    /// The paragraph under the area file's Parked heading, for `render`.
+    pub parked_intro: Option<String>,
     /// Globs, relative to the root, of the files this area governs.
     #[serde(default)]
     pub paths: Vec<String>,
@@ -63,10 +70,14 @@ pub struct Namespace {
     /// Defaults to everything under the root.
     #[serde(default = "default_scope")]
     pub scope: Vec<String>,
+    /// Globs carved out of the scope: files where this letter means
+    /// something else (an OAuth constant, a hex digit) and is never an id.
+    #[serde(default)]
+    pub except: Vec<String>,
     /// For an external namespace: the document or directory defining its ids.
     pub defined_in: Option<PathBuf>,
-    /// For an external namespace defined in a document: a regex whose first
-    /// capture is the id or its number, matched per line.
+    /// For an external namespace defined in a document: a regex matched
+    /// per line whose first non-empty capture is the id or its number.
     pub pattern: Option<String>,
     pub budget: Option<Budget>,
 }

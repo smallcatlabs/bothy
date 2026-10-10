@@ -7,8 +7,12 @@ namespace bothy owns has a `dir`; an external one has the document that
 defines its ids and a pattern for a definition, and is parsed for
 existence only. The same letter may name two registers in two scopes. A
 citation outside every scope of its letter is unresolved and `check`
-says so.
+says so. A scope may carve files out with `except`, for a file where the
+letter and a number mean something that is not an id (amended
+2026-10-10: `S256` in the daemon's OAuth code is the PKCE code-challenge
+method, found by the first import of acquisition).
 '''
 why = "Measured on acquisition at bfa59416: `F` is a finding in docs/cleanup/findings.md (F1 to F78) and a fault in the search slice (F1 to F10, cited from search/LEDGER.md); a per-letter table cannot hold both."
 decided = 2026-10-09
+amended = [2026-10-10]
 status = "ruled"
