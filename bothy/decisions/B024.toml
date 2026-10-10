@@ -1,0 +1,17 @@
+id = "B24"
+area = "cli"
+title = "`park fire` stops a park once, by a ruling that exists, and makes the two name each other"
+ruling = '''
+`bothy park fire <park> --by <ruling>` sets `fired` to today and
+`fired_by` to the ruling in the park's file, and adds the park's id to
+the ruling's `evidence` unless the evidence already names it (B6). The
+park keeps its file and leaves the lists, packs and projections (B3).
+It refuses a park that already fired, an id that is not a park, and a
+`--by` that is a park or does not exist: the ruling is written first.
+A ruling an external namespace defines may fire a park and is left
+unchanged, because bothy does not own its file. Both files are prepared
+and read back before either is written (B14, B23).
+'''
+why = '''
+The question a reflection asks is "what fired, and by what"; it is a list only if both ends were written at the moment of firing, and a park fired by a ruling nobody wrote is a park deleted.'''
+decided = 2026-10-10

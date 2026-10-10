@@ -351,3 +351,75 @@ fn amend_refuses_a_park_a_retired_ruling_and_an_unknown_id() {
     );
     assert!(refusal("D9").contains("no entry D9"), "{}", refusal("D9"));
 }
+
+#[test]
+fn fire_marks_the_park_and_the_ruling_names_it() {
+    let dir = fixture("fire");
+    let fired = write::fire(&open(&dir), id("P1"), id("D1"), &day("2026-10-10")).unwrap();
+    assert_eq!(fired.path, Path::new("book/parks/P001.toml"));
+    assert_eq!(
+        fired.evidence_added_to.as_deref(),
+        Some(Path::new("book/decisions/D001.toml"))
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.join("book/parks/P001.toml")).unwrap(),
+        format!("{P1}fired = 2026-10-10\nfired_by = \"D1\"\n"),
+        "the park gains two lines"
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.join("book/decisions/D001.toml")).unwrap(),
+        D1.replace("'''\ndecided", "'''\nevidence = [\"P1\"]\ndecided"),
+        "the ruling gains one"
+    );
+
+    let book = open(&dir);
+    assert!(failures(&book).is_empty());
+    assert!(
+        book.get(id("P1")).unwrap().entry.is_retired(),
+        "a fired park keeps its file and leaves the lists and packs"
+    );
+
+    let err = write::fire(&book, id("P1"), id("D1"), &day("2026-10-11"))
+        .unwrap_err()
+        .to_string();
+    assert!(err.contains("already fired on 2026-10-10 by D1"), "{err}");
+}
+
+#[test]
+fn fire_leaves_evidence_that_already_names_the_park() {
+    let dir = fixture("fire-named");
+    let with_evidence = D1.replace(
+        "decided = ",
+        "evidence = [\"takes up P1, measured twice\"]\ndecided = ",
+    );
+    std::fs::write(dir.join("book/decisions/D001.toml"), &with_evidence).unwrap();
+    let fired = write::fire(&open(&dir), id("P1"), id("D1"), &day("2026-10-10")).unwrap();
+    assert!(fired.evidence_added_to.is_none());
+    assert_eq!(
+        std::fs::read_to_string(dir.join("book/decisions/D001.toml")).unwrap(),
+        with_evidence
+    );
+}
+
+#[test]
+fn fire_refuses_what_is_not_a_park_or_not_a_ruling_and_writes_nothing() {
+    let dir = fixture("fire-refusals");
+    let book = open(&dir);
+    let today = day("2026-10-10");
+    let refusal = |park: &str, by: &str| {
+        write::fire(&book, id(park), id(by), &today)
+            .unwrap_err()
+            .to_string()
+    };
+    assert!(refusal("D1", "D1").contains("not a park"));
+    assert!(refusal("P1", "P1").contains("P1 is a park"));
+    let unknown = refusal("P1", "D9");
+    assert!(
+        unknown.contains("no entry D9") && unknown.contains("bothy new decision"),
+        "{unknown}"
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.join("book/parks/P001.toml")).unwrap(),
+        P1
+    );
+}

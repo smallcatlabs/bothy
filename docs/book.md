@@ -152,6 +152,15 @@ verb dates the change. A field it adds goes on the line where a written
 entry has it, and no other line changes: comments, quoting and key
 order stay the author's (B14). The edited text is read back as an entry
 before it is written, and an edit that would not read is not written. *Why:* A verdict is a quotation and a date list is a record; a tool that overwrites either leaves git as the only witness. The text of the change is the author's to write, so the verb has no flag for it. Decided 2026-10-10.
+- **B24 — `park fire` stops a park once, by a ruling that exists, and makes the two name each other** `bothy park fire <park> --by <ruling>` sets `fired` to today and
+`fired_by` to the ruling in the park's file, and adds the park's id to
+the ruling's `evidence` unless the evidence already names it (B6). The
+park keeps its file and leaves the lists, packs and projections (B3).
+It refuses a park that already fired, an id that is not a park, and a
+`--by` that is a park or does not exist: the ruling is written first.
+A ruling an external namespace defines may fire a park and is left
+unchanged, because bothy does not own its file. Both files are prepared
+and read back before either is written (B14, B23). *Why:* The question a reflection asks is "what fired, and by what"; it is a list only if both ends were written at the moment of firing, and a park fired by a ruling nobody wrote is a park deleted. Decided 2026-10-10.
 
 Parked, each with the trigger that reopens it:
 

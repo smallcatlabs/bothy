@@ -118,6 +118,39 @@ enum Command {
         #[arg(long, value_name = "DATE")]
         date: Option<String>,
     },
+
+    /// Work with parks. `fire` stops one whose trigger has fired.
+    ///
+    /// To add a park, use `bothy new park`. To see them, `bothy list
+    /// parks`; add --retired for the ones that fired.
+    Park {
+        #[command(subcommand)]
+        command: ParkCommand,
+    },
+}
+
+#[derive(Subcommand)]
+enum ParkCommand {
+    /// Stop a park whose trigger fired, naming the ruling that fired it.
+    ///
+    /// The park's file gains today's date as `fired` and the ruling as
+    /// `fired_by`, and the ruling's `evidence` gains the park's id, so
+    /// each names the other. The park keeps its file and leaves the
+    /// lists, the packs and the rendered markdown. Write the ruling
+    /// first, with `bothy new decision`.
+    Fire {
+        /// The park, like K1.
+        id: String,
+
+        /// The ruling that fired the trigger, like C110.
+        #[arg(long, value_name = "ID")]
+        by: String,
+
+        /// The date to record, like 2026-10-09. Default: today, by this
+        /// machine's clock and time zone.
+        #[arg(long, value_name = "DATE")]
+        date: Option<String>,
+    },
 }
 
 #[derive(Args)]
@@ -599,6 +632,39 @@ fn run(cli: Cli) -> Result<ExitCode> {
                 }
                 if !book.config.projection.is_empty() && (amended.date_added || amended.verdict_set)
                 {
+                    println!("next: run `bothy render`");
+                }
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+
+        Command::Park {
+            command: ParkCommand::Fire { id, by, date },
+        } => {
+            let id = Id::parse(&id).map_err(|e| anyhow!("{e}"))?;
+            let by = Id::parse(&by).map_err(|e| anyhow!("{e}"))?;
+            let today = date_or_today(date.as_deref())?;
+            let fired = write::fire(&book, id, by, &today)?;
+            if cli.json {
+                println!("{}", serde_json::to_string_pretty(&fired)?);
+            } else {
+                println!(
+                    "fired {id} by {by} on {}: {} keeps its file and leaves the lists and packs",
+                    fired.date,
+                    fired.path.display()
+                );
+                match &fired.evidence_added_to {
+                    Some(path) => {
+                        println!("added {id} to the evidence of {by}: {}", path.display())
+                    }
+                    None if book.get(by).is_some() => {
+                        println!("{by} already names {id} in its evidence")
+                    }
+                    None => println!(
+                        "{by} is defined outside this book, so its evidence was not changed"
+                    ),
+                }
+                if !book.config.projection.is_empty() {
                     println!("next: run `bothy render`");
                 }
             }

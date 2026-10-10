@@ -1,5 +1,6 @@
-//! The write verbs. `new` adds an entry (B22) and `amend` dates a
-//! change to a ruling (B23). Each one reads the book,
+//! The write verbs. `new` adds an entry (B22), `amend` dates a change
+//! to a ruling (B23) and `fire` stops a park whose trigger fired (B24).
+//! Each one reads the book,
 //! changes one or two entry files under the directories `bothy.toml`
 //! names and nothing else (B4), and says what it wrote. None of them
 //! prompts or opens an editor: the caller is as often an agent in a
@@ -477,5 +478,114 @@ pub fn amend(book: &Book, id: Id, verdict: Option<&str>, today: &Date) -> Result
         date: today.clone(),
         date_added,
         verdict_set: verdict.is_some(),
+    })
+}
+
+/// What `fire` did.
+#[derive(Serialize, Debug)]
+pub struct Fired {
+    pub park: Id,
+    pub by: Id,
+    pub date: Date,
+    /// The park's file, relative to the root.
+    pub path: PathBuf,
+    /// The firing ruling's file, when this book owns it and its
+    /// `evidence` gained the park's id.
+    pub evidence_added_to: Option<PathBuf>,
+}
+
+/// Whether `text` names `id` as a whole word: `C5` is in "takes up C5"
+/// and not in "C54".
+fn names(text: &str, id: Id) -> bool {
+    let id = id.to_string();
+    text.split(|c: char| !c.is_ascii_alphanumeric())
+        .any(|word| word == id)
+}
+
+/// Stops a park whose trigger fired (B24): the park gains `fired` and
+/// `fired_by`, and the ruling that fired it gains the park's id in its
+/// `evidence`, so the two name each other (B6). The park keeps its
+/// file (B3). Both files are prepared before either is written.
+pub fn fire(book: &Book, park: Id, by: Id, today: &Date) -> Result<Fired> {
+    let loaded = owned(book, park)?;
+    let Entry::Park(p) = &loaded.entry else {
+        bail!(
+            "{park} is a {}, not a park; only a park is fired. To replace a ruling, write the new one and set the old one's `status = \"superseded\"` and `superseded_by`",
+            loaded.kind_name()
+        );
+    };
+    if let Some(date) = &p.fired {
+        let by_whom = match p.fired_by {
+            Some(by) => format!(" by {by}"),
+            None => String::new(),
+        };
+        bail!("{park} already fired on {date}{by_whom}; a park fires once");
+    }
+
+    // The ruling that fired it: one this book owns gains the evidence;
+    // one an external namespace defines is named and left alone.
+    let ruling = match book.get(by) {
+        Some(l) => match &l.entry {
+            Entry::Decision(d) => Some((l, d)),
+            Entry::Park(_) => bail!(
+                "{by} is a park; a park is fired by the ruling that takes up its work. Write that ruling with `bothy new decision`, then fire {park} by it"
+            ),
+        },
+        None if book.knows(by) => None,
+        None => bail!(
+            "no entry {by} in this book; write the ruling that fired the trigger with `bothy new decision`, then fire {park} by it"
+        ),
+    };
+
+    let mut park_doc = document(loaded)?;
+    insert_in_order(
+        &mut park_doc,
+        "fired",
+        value(toml_date(today)),
+        emit::PARK_KEYS,
+    );
+    insert_in_order(
+        &mut park_doc,
+        "fired_by",
+        value(by.to_string()),
+        emit::PARK_KEYS,
+    );
+
+    let ruling_edit = match ruling {
+        Some((l, d)) if !d.evidence.iter().any(|e| names(e, park)) => {
+            let mut doc = document(l)?;
+            match doc.get_mut("evidence").and_then(Item::as_array_mut) {
+                Some(list) => list.push(park.to_string()),
+                None => {
+                    let mut list = Array::new();
+                    list.push(park.to_string());
+                    insert_in_order(&mut doc, "evidence", value(list), emit::DECISION_KEYS);
+                }
+            }
+            // Read it back now, so a ruling that would not save stops
+            // the verb before the park is touched.
+            parse_entry(l.kind, &doc.to_string()).map_err(|e| {
+                anyhow!(
+                    "the change would leave {} unreadable ({}); nothing was written",
+                    l.path.display(),
+                    e.message()
+                )
+            })?;
+            Some((l, doc))
+        }
+        _ => None,
+    };
+
+    save(book, loaded, &park_doc)?;
+    if let Some((l, doc)) = &ruling_edit {
+        save(book, l, doc)?;
+    }
+
+    Ok(Fired {
+        park,
+        by,
+        date: today.clone(),
+        path: loaded.path.clone(),
+        evidence_added_to: ruling_edit.map(|(l, _)| l.path.clone()),
     })
 }
