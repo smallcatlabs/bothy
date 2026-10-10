@@ -49,11 +49,17 @@ kind = "park"
 dir = "bothy/parks"
 
 # Where citations are looked for. One set per consumer; a citation of an
-# id outside every scope of its letter is a check failure.
+# id outside every scope of its letter is a check failure. The brief and
+# the notes under docs/ are history (B16) and are not scanned, the same
+# way acquisition's docs-check skips its brainstorming notes: a ruling
+# counts as cited when code, a test or a document a session acts on
+# names it.
 
 [cite]
-paths = ["src/**/*.rs", "tests/**/*.rs", "README.md", "docs/*.md", "bothy.toml"]
-exclude = ["docs/35-*.md"]
+paths = ["src/**/*.rs", "tests/**/*.rs", "README.md", "AGENTS.md", "Cargo.toml"]
+# Fixture text in this test quotes acquisition's ids (C54, K12), which are
+# not entries in this book.
+exclude = ["tests/worked_examples.rs"]
 
 # Closed enumerations (B7). A value outside the list is a check failure.
 

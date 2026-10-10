@@ -19,24 +19,28 @@ And it assembles the context an agent needs for one task, in one call,
 measured in tokens.
 
 ```sh
-bothy pack --area store        # what a session reads before touching the store
-bothy show C54                 # one ruling, what it cites, what cites it
-bothy park list --trigger GUI  # everything waiting on the GUI slice
-bothy park fire K12 --by C110  # a trigger fired; the park leaves, the ruling arrives
-bothy check                    # ids, citations, budgets, projections current
-bothy render --check           # the markdown on disk matches the source
+bothy check                    # ids, fields, citations; exit 1 on any failure
+bothy show B3                  # one ruling, what it names, what cites it
+bothy list parks --area cli    # everything this area has deferred, with its trigger
+bothy list decisions --uncited # rulings no code, test or document names yet
+bothy pack --area check        # what a session reads before touching the checks (coming)
+bothy render --check           # the markdown on disk matches the source (coming)
 ```
+
+The examples are real: they run against this repository's own book.
 
 The source is TOML anyone can edit with a text editor, one entry per
 file. The index is built in memory every run and never written. The
 markdown is a projection. Those three roles — intent, derivation,
 rendering — are the design.
 
-Status: a design brief, a grammar audit of its second consumer,
-[acquisition](https://github.com/gerwaric/acquisition), and bothy's own
-book under `bothy/`: twenty rulings and ten parks, written by hand
-before the tool existed. The tool is its own first consumer. Everything
-it writes for a reader is written for the smallest model in use. See
+Status: `check`, `list` and `show` work, against bothy's own book under
+`bothy/`: twenty rulings and ten parks, written by hand before the tool
+existed. The tool is its own first consumer; its second is
+[acquisition](https://github.com/gerwaric/acquisition), whose registry
+the design brief was audited from. `pack`, `render`, `new`, `amend` and
+`import` are next. Everything the tool writes for a reader is written
+for the smallest model in use. Start at `AGENTS.md`; the design is
 `docs/design-brief.md`.
 
 Leave it as you'd wish to find it.

@@ -1,0 +1,17 @@
+[package]
+name = "bothy"
+version = "0.1.0"
+edition = "2024"
+
+# Bothy is its own repository and a consumer's dev tool, never a workspace
+# member (B11). The dependency list is the one ruled in B12; a crate is
+# added in the commit that adds the verb needing it.
+[dependencies]
+anyhow = "1.0.104"
+clap = { version = "4.6.7", features = ["derive"] }
+globset = "0.4.20"
+ignore = "0.4.33"
+regex = "1.13.1"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+toml = "1.1.8"

@@ -221,7 +221,8 @@ scope = ["**"]
 defined_in = "../../docs/cleanup/findings.md"
 pattern = '^(?:### |\| )(F\d+)'
 
-[namespace.F.slice]                      # the same letter, a different register
+[namespace.F_slice]                      # the same letter, a different register
+letter = "F"                             # the key is a name; the letter is explicit when they differ
 kind = "external"
 scope = ["search/**", "SEARCH-SLICE.md"]
 defined_in = "search/BUILD-PLAN.md"
