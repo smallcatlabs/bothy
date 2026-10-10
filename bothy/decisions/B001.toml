@@ -1,0 +1,12 @@
+id = "B1"
+area = "cross-cutting"
+title = "The source is structured text in git, one entry per file, that a person can edit with nothing but a text editor"
+ruling = '''
+No binary, no server, no lock, no tool required to add or change an
+entry. A hand-written entry is as valid as one the tool wrote; this
+book's first twenty decisions and ten parks were written by hand before
+the tool existed.
+'''
+why = "The next session may arrive with nothing but a shell, and the owner with nothing but an editor."
+decided = 2026-10-09
+status = "ruled"

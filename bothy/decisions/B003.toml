@@ -1,0 +1,13 @@
+id = "B3"
+area = "cross-cutting"
+title = "An id is never reused, and a retired entry keeps its file"
+ruling = '''
+A superseded decision stays as a file with `status = "superseded"` and
+the id that replaced it. A park whose trigger fired stays with the date
+it fired and the id that fired it. The next id is one more than the
+largest id present. Projections and packs omit retired entries, so a
+retired file costs no reader anything.
+'''
+why = "Deleting the file and reading git for the high-water mark puts git in the hot path and makes 'what fired, and by what' archaeology; a kept file makes it a list. Alternative considered: the brief's deletion rule, which acquisition uses because a bullet in an always-loaded file taxes every session; a TOML file nobody loads taxes no one."
+decided = 2026-10-09
+status = "ruled"

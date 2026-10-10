@@ -1,0 +1,15 @@
+id = "B7"
+area = "schema"
+title = "Enumerations are closed per project and declared in bothy.toml"
+ruling = '''
+Confidence (`confirmed`, `high`, `provisional`, `hypothesis`), source
+tokens, finding status and decision status are lists in the consumer's
+`bothy.toml`. A value outside its list is a check failure, and the
+qualifier that used to ride on the word goes in `scope`: "Confirmed for
+15 of 22 groups" becomes `confidence = "confirmed"`, `scope = "15 of 22
+groups"`. A ledger kind declares its columns the same way, because the
+two ledgers in use today have different columns.
+'''
+why = "Twenty-eight phrasings of confidence exist today for four meanings; the enum keeps the meaning and `scope` keeps the words."
+decided = 2026-10-09
+status = "ruled"

@@ -1,0 +1,11 @@
+id = "B13"
+area = "schema"
+title = "A date the prose lacks is filled from git at import and marked as such"
+ruling = '''
+`decided_from = "git"` sits beside a `decided` the importer took from
+the commit that introduced the entry, so a reader can tell a measured
+date from a recalled one.
+'''
+why = "Acquisition applies the same rule to sizes: a number stated from memory is marked, a number measured is not."
+decided = 2026-10-09
+status = "ruled"

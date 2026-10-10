@@ -1,0 +1,6 @@
+id = "K3"
+area = "check"
+item = "A generic 'backticked identifiers resolve' check (acquisition's docs-check §3) with configurable roots"
+home = "check, as a built-in with roots in bothy.toml"
+trigger = "a second consumer wanting it; until then it stays in acquisition's extra checks"
+parked = 2026-10-09

@@ -1,0 +1,10 @@
+id = "B11"
+area = "repo"
+title = "Bothy lives in its own repository under Small Cat Labs; a consumer depends on it as a development tool, never as a workspace member"
+ruling = '''
+`cargo install --git` or a pinned binary. Acquisition's crate graph (its
+C1) is untouched, and the tool's release cadence is its own.
+'''
+why = "A registry tool inside the consumer's workspace would be a dependency edge its own check would have to explain."
+decided = 2026-10-09
+status = "ruled"

@@ -1,0 +1,10 @@
+id = "B9"
+area = "render"
+title = "Templates are minijinja files in the consumer, with built-in defaults that reproduce acquisition's current form"
+ruling = '''
+A consumer that writes no template gets the built-in shape. A consumer
+that wants another shape writes one and names it in a `[[projection]]`.
+'''
+why = "v0's golden render passes without the first consumer writing a template."
+decided = 2026-10-09
+status = "ruled"

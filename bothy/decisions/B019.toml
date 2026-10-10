@@ -1,0 +1,11 @@
+id = "B19"
+area = "schema"
+title = "Areas are declared in bothy.toml with a title and the paths they govern"
+ruling = '''
+An entry naming an undeclared area is refused. `pack --path` resolves
+an area through the declared paths. `cross-cutting` is declared like any
+other area and is the one every pack includes.
+'''
+why = "A misspelled area would otherwise become a new area, silently."
+decided = 2026-10-09
+status = "ruled"

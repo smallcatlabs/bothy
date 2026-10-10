@@ -1,0 +1,6 @@
+id = "K1"
+area = "cli"
+item = "A web or TUI view of the book"
+home = "a separate binary over the same crate"
+trigger = "two sessions wanting it"
+parked = 2026-10-09

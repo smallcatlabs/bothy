@@ -1,0 +1,6 @@
+id = "K7"
+area = "cross-cutting"
+item = "A SQLite index, rebuilt per run and gitignored (the brief's D4)"
+home = "behind the same query surface the in-memory maps serve (B8)"
+trigger = "a query that is awkward over in-memory maps, or a consumer with more than five thousand entries"
+parked = 2026-10-09

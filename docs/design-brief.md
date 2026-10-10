@@ -11,10 +11,16 @@ traveler writes what they found for those who follow. This tool is that
 book for a repository: the one the next session reads.
 
 This is the document the first build session starts from. In the
-acquisition idiom: design precedes code, rulings land here, and the
-done-criterion is stated before the first line of Rust. Nothing in it
-is settled until the owner says so; the candidate rulings are numbered
-so a session can accept, amend or refuse each.
+acquisition idiom: design precedes code and the done-criterion is
+stated before the first line of Rust.
+
+**Amended 2026-10-09**, the same day, after the owner handed the lead to
+Claude and asked that Opus and Sonnet-class models be treated as
+consumers. The rulings now live as entries in `bothy/decisions/` (B1 to
+B20) and the parks in `bothy/parks/` (K1 to K10), written by hand (B16).
+Where this text and an entry disagree, the entry wins. The sections
+below were edited in place to match; the brief as it left the design
+session is the first commit.
 
 ---
 
@@ -73,9 +79,11 @@ Three facts shape the design:
    the source.** The SQLite index is rebuilt on every run and is
    gitignored. A rendered markdown file is a projection; editing it is
    a mistake the check reports.
-3. **An id is never reused.** A deleted entry's file is gone and git
-   holds it; the next id is max+1 over history, not over the present
-   (the tool reads `git log` for the high-water mark).
+3. **An id is never reused, and a retired entry keeps its file** (B3).
+   A superseded decision carries `status = "superseded"` and the id that
+   replaced it; a fired park carries the date and the id that fired it.
+   The next id is max+1 over the files present; projections and packs
+   omit retired entries, so they cost no reader anything.
 4. **The tool never writes to a consumer's code.** It scans source for
    citations; it does not insert them.
 
@@ -114,7 +122,8 @@ evidence = []                # claim ids ("N42") or ledger rows ("run:2026-09-08
 decided = 2026-09-02         # TOML date; the import fills it from git blame when the prose has none
 amended = []                 # [2026-09-09, 2026-09-17]
 verdict = ""                 # the owner's words when quoted: "I agree to 1 entirely"
-status = "ruled"             # ruled | superseded (by = "C110") — deleted entries are removed files
+status = "ruled"             # ruled | superseded | retired — a retired entry keeps its file (B3)
+superseded_by = "C110"       # only with status = "superseded"
 ```
 
 Optional fields are omitted, not emptied, in files the tool writes.
@@ -140,9 +149,11 @@ parked = 2026-09-03
 #   the import moves it here so `item`/`home`/`trigger` stay one line each
 ```
 
-Firing a park is `bothy park fire K12 --by C110`: the file is
-deleted and the next decision's `evidence` names the park's id, which
-git resolves forever.
+Firing a park is `bothy park fire K12 --by C110`: the file gains
+`fired = <today>` and `fired_by = "C110"`, the new decision's `evidence`
+names `K12`, and `park list` omits it unless asked `--fired` (B3). The
+next reflection's question "did the GUI fire the six frontends parks as
+predicted?" becomes a list, not archaeology.
 
 ### 4.3 Claim — `bothy/claims/N002.toml` (master's second consumer)
 
@@ -200,25 +211,49 @@ which a field cannot produce.
 # bothy.toml, in the consumer
 [namespace.S]
 kind = "external"
-scope = "slice:search"
-defined_in = "spikes/rust-playground/search/DESIGN.md"
-pattern = '^\*\*S(\d+)\.'      # how a definition looks in that document
+scope = ["**"]                           # where an S<n> token means this register
+defined_in = "search/DESIGN.md"
+pattern = '^\*\*S(\d+)\.'              # how a definition looks in that document
+
+[namespace.F]                            # master's findings, seen from the playground
+kind = "external"
+scope = ["**"]
+defined_in = "../../docs/cleanup/findings.md"
+pattern = '^(?:### |\| )(F\d+)'
+
+[namespace.F.slice]                      # the same letter, a different register
+kind = "external"
+scope = ["search/**", "SEARCH-SLICE.md"]
+defined_in = "search/BUILD-PLAN.md"
+pattern = 'F(\d+)'
 ```
 
-An external namespace is parsed for *existence* only, so `C108`'s
-citation of `S131` resolves, and `check` reports a citation of an
-`S` id that no longer exists. When a slice closes and its document is
-cut, the ids it defined are tombstoned in git and `check` says so.
+A namespace is a letter **and a scope** (B10): a citation resolves by
+its letter and by the file it occurs in. This is forced by evidence, not
+taste: at `bfa59416`, `F22` in master's `docs/cleanup/findings.md` is a
+finding and `F3` in `search/LEDGER.md` is a fault from the first seat.
+A per-letter table cannot hold both. An external namespace is parsed for
+*existence* only, so `C108`'s citation of `S131` resolves, and `check`
+reports a citation of an id that no longer exists in its document.
 
 ### 4.7 The consumer's configuration — `bothy.toml`
 
 ```toml
 root = "spikes/rust-playground"
 
+[area.store]                               # B19: declared, with the paths it governs
+title = "Store: facts, realm, characters"
+paths = ["crates/acquisition-store/**", "crates/acquisition-protocol/src/realm.rs"]
+# ... one block per area; `cross-cutting` is declared like the rest
+
+[cite]                                     # one scan set per consumer, docs-check's "anywhere"
+paths = ["crates/**/*.rs", "tools/*", "*.md", ".claude/**/*.md", "search/DIGEST.md",
+         "search/MEASUREMENTS.md", "search/LEDGER.md"]
+exclude = ["brainstorming-notes/**"]       # disposable; may cite an id since rewritten
+
 [namespace.C]
 kind = "decision"
 dir = "bothy/decisions"
-cite_in = ["crates/**/*.rs", "tools/*", "*.md", "decisions/*.md", ".claude/**/*.md"]
 [namespace.C.budget]
 cross_cutting = 15
 entry_bytes = 800
@@ -232,8 +267,9 @@ kind = "principle"
 dir = "bothy/principles"
 
 [namespace.N]
-kind = "claim"
-dir = "../../docs/ground-truth/network"     # master-side; cherry-picked, never authored here
+kind = "external"                           # master's book owns N; the playground only cites it
+scope = ["**"]
+defined_in = "../../bothy/claims"           # master's own bothy.toml declares it as a claim namespace
 
 [[projection]]
 out = "CONTEXT.md"
@@ -264,13 +300,13 @@ verbs over the same crate, so a session's first call can be one `pack`.
 | `bothy new decision --area store` | allocates the next id over history, writes the template, validates | editing the bullet by hand and hoping the id is free |
 | `bothy amend C54 [--verdict "..."]` | appends today's date, optional verdict | hand-editing "Amended …" |
 | `bothy park new / list [--trigger GUI] / fire K12 --by C110` | the park lifecycle | the Parked sections |
-| `bothy pack --area store [--slice search] [--budget 8000]` | invariants + cross-cutting + the area's decisions and parks + the open slice's checklist, as one document with its byte and token count | reading five files at session start |
+| `bothy pack --area store` / `--path crates/acquisition-store/src/corpus.rs` / `--for C54` `[--budget 8000]` | the primary read surface (B15): invariants, principles, cross-cutting, the area's rulings and parks, the open slice's checklist, then the citation map (id → file:line); footer with bytes, token estimate and its estimator, and the commit; `--budget` trims from the tail and says what it trimmed | reading five files at session start |
 | `bothy blame C90` | the commit that introduced the entry; fills a missing `decided` on import | — |
 | `bothy import <path>` | the one-time migration from today's markdown; the audit script grown up | — |
 | `bothy seat --pack ... --questions seat.toml` | the legibility seat: the questions, the pack, a transcript to score | — (note 35 §9) |
 | `bothy stats` | the baseline table (entries by kind, bytes, tokens, uncited count, parks by area) | note 35 §2's shell block |
 
-Token counts: v0 reports bytes and an approximation (a BPE tokenizer
+Every verb takes `--json` (B8). Token counts: v0 reports bytes and an approximation (a BPE tokenizer
 offline; the Anthropic count-tokens endpoint when a key is present and
 the owner says so). Budgets are stated in tokens on projections and
 packs, not bytes on files; the byte budget per entry stays as the
@@ -293,6 +329,9 @@ dependency guard is untouched.
 
 Stated before the code, in the consumer's idiom:
 
+0. `bothy check` passes on bothy's own book in this repository (B16),
+   and reports every decision as uncited until the code that holds it
+   cites it.
 1. `bothy import` over `spikes/rust-playground` at `bfa59416`
    produces 108 decisions, 54 parks (53 area, 1 cross-cutting), 6
    principles and 5 invariants as
@@ -312,7 +351,16 @@ Stated before the code, in the consumer's idiom:
 Nothing else is v0. The MCP server, `seat`, `blame` and `stats` are v1,
 each earned by a session that wanted it.
 
-## 8. Candidate rulings (numbered for the owner)
+## 8. Candidate rulings, as ruled 2026-10-09
+
+Each landed as an entry; the entry is authoritative. D1 → B5, D2 → B6,
+D3 → B7, D5 → B9, D7 → B11, D9 → B13 unchanged. Changed: D4 (B8, no
+database), D6 (B10, scoped namespaces), D8 (B12, `toml_edit` added,
+`rusqlite` removed). New: B3 (retire, don't delete), B14 (writes through
+`toml_edit`), B15 (`pack` designed), B16 (bothy is its own first
+consumer), B17 (plain register; the smallest model in use is the
+reader), B18 (never reflow), B19 (declared areas), B20 (`check`'s
+contract). The original text follows for the record.
 
 - **D1.** The source is TOML, one file per entry, named by zero-padded
   id (`C054.toml`), in a `bothy/` directory beside the documents it
@@ -346,6 +394,10 @@ each earned by a session that wanted it.
 
 ## 9. Parked (with triggers)
 
+Now `bothy/parks/K001.toml` to `K010.toml`; the list below is the
+record of the brief's version. K7 (SQLite), K8 (MCP), K9 (`seat`) and
+K10 (`stats`, `blame`) were added at the amendment.
+
 - A web or TUI view → trigger: the owner asking, twice.
 - Token counting by the exact model tokenizer → trigger: a budget
   decision that the approximation got wrong by more than 10%.
@@ -364,8 +416,11 @@ each earned by a session that wanted it.
 In Claude Code, on the owner's laptop, with acquisition's clone beside
 the new repo. One deliverable: done-criterion 1 and 2, in that order.
 
+0. Write bothy's own `bothy.toml` and entries by hand (done at the
+   amendment; it is the first test of invariant 1).
 1. `cargo new bothy`; the schema types from §4 as serde structs;
-   `toml` round-trip tests on the four worked examples above.
+   `toml` round-trip tests on the four worked examples above; `check`,
+   `list` and `show` over bothy's own book.
 2. `import`: port `tools/audit.py`'s parsers to Rust; write the files;
    run `check`.
 3. `render` with the built-in templates; diff against the real files;
@@ -382,15 +437,17 @@ assumes the latter for v0).
 
 ## 11. Questions
 
-1. D2's letter, and whether parks should carry a `why` at all (the
-   current rule allows one clause; 25 of 54 carry an owner reference
-   instead).
-2. Should `ruling` stay the owner's verbatim words with the tool
-   refusing to reflow them, or may `render` wrap at 72 columns? The
-   golden test needs an answer before step 3.
-3. Does master get its own `bothy.toml` in v0 (done-criterion 4), or
-   is that v1? It is the cheapest test of generality available and I
-   would keep it in v0.
+1. ~~D2's letter, and whether parks should carry a `why`.~~ Resolved
+   2026-10-09: `K`; a park carries an optional `why` and a separate
+   `verdict` for the owner's words, as a decision does, so the 25 owner
+   references stop being smuggled into `why`.
+2. ~~Reflow?~~ Resolved 2026-10-09: never (B18). Render emits the string
+   as stored; import stores today's single lines; a hand-wrapped ruling
+   renders wrapped and CommonMark's lazy continuation keeps it in its
+   bullet.
+3. ~~Master in v0?~~ Resolved 2026-10-09: yes. Master gets its own
+   `bothy.toml` and a `bothy/` tree; the playground declares `N` as
+   external pointing at it (§4.7).
 4. ~~The name.~~ Resolved 2026-10-09: `bothy`, free on crates.io and at
    `smallcatlabs/bothy`; chosen by Claude from the tool's purpose (a
    marker left for whoever comes next) after cairn, trellis, docket,

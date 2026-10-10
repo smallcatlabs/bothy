@@ -1,0 +1,12 @@
+id = "B2"
+area = "cross-cutting"
+title = "Every derived artifact is reproducible from the source and is never the source"
+ruling = '''
+The index is rebuilt on every run. A rendered markdown file is a
+projection: its first line names the source it was rendered from, and
+`check` reports a projection on disk that differs from what the source
+renders now.
+'''
+why = "Two copies of a fact rot apart; one is the source and the rest are its shadows."
+decided = 2026-10-09
+status = "ruled"

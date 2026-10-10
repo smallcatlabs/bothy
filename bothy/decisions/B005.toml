@@ -1,0 +1,15 @@
+id = "B5"
+area = "schema"
+title = "TOML, one file per entry, named by its zero-padded id, under a bothy/ directory beside the documents it renders"
+ruling = '''
+`bothy/decisions/C054.toml`, `bothy/parks/K012.toml`. Prose fields are
+multiline strings carrying the author's words verbatim. Alternative
+considered: one array per area, rejected because two sessions adding an
+entry would edit the same file and a duplicate id inside an array is
+silent. Markdown with front matter was weighed and set aside: entries
+are short typed records, and the audit's lesson is that prose
+conventions drift while TOML has no grammar to drift.
+'''
+why = "Two sessions adding entries touch two files, or collide loudly on one, never silently."
+decided = 2026-10-09
+status = "ruled"

@@ -1,0 +1,6 @@
+id = "K6"
+area = "schema"
+item = "Jujutsu-aware blame (change ids instead of commit hashes)"
+home = "import's date filling (B13)"
+trigger = "the jj trial in acquisition surviving its first slice"
+parked = 2026-10-09

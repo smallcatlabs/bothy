@@ -1,0 +1,14 @@
+id = "B20"
+area = "check"
+title = "check is one command, exits non-zero on any failure, and names each offender"
+ruling = '''
+It refuses: an id out of step with its file name, a duplicate id, a
+citation that does not resolve in its scope, an enum value outside its
+list, an undeclared area, a projection that differs from its render. It
+reports, without failing: a decision nothing cites. A failure is one
+line: file, line, what is wrong, what to do. The consumer's own extra
+checks run last.
+'''
+why = "This replaces three of docs-check.sh's seven checks and must be at least as loud."
+decided = 2026-10-09
+status = "ruled"

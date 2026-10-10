@@ -1,0 +1,12 @@
+id = "B18"
+area = "render"
+title = "The tool never reflows prose"
+ruling = '''
+A string renders as stored, newlines included. Import stores today's
+rulings as the single lines they are. A ruling wrapped by hand in its
+source renders wrapped, and CommonMark's lazy continuation keeps it
+inside its bullet.
+'''
+why = "The golden render passes by construction, and prose diffs stay line-shaped."
+decided = 2026-10-09
+status = "ruled"

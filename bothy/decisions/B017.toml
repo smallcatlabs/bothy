@@ -1,0 +1,14 @@
+id = "B17"
+area = "cross-cutting"
+title = "Plain register: everything bothy writes for a reader is written for someone who has never seen the project and is the smallest model in use"
+ruling = '''
+Help text, pack headings, check messages and the comments in a template
+`new` writes. A check message names the file and line and says what to
+do. The legibility seat, when it runs, reads with the smallest model in
+use: if a Sonnet-class model acts correctly from the pack, every model
+does.
+'''
+why = "A compressed register taxes every fresh session and taxes a smaller model most (acquisition note 35 §6.1); the owner asked that Opus and Sonnet-class models be consumers, not only readers."
+verdict = "also consider Opus and Sonnet-class models as consumers and users"
+decided = 2026-10-09
+status = "ruled"

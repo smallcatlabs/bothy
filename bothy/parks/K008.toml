@@ -1,0 +1,6 @@
+id = "K8"
+area = "cli"
+item = "An MCP server exposing the read verbs and the two write verbs over the same crate"
+home = "a second binary or a subcommand; rmcp and tokio arrive with it (B12)"
+trigger = "v0's done-criteria met; this is the first v1 item because a smaller model gains most from a typed tool call over a remembered flag (B17)"
+parked = 2026-10-09

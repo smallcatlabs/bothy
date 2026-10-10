@@ -1,0 +1,11 @@
+id = "B6"
+area = "schema"
+title = "Parks have ids, in a letter the consumer chooses"
+ruling = '''
+Acquisition's parks and bothy's own both use `K`. A park's id is named
+by the ruling that fired it (in `evidence`) and by the park's own
+`fired_by` field, so the two point at each other.
+'''
+why = "fire, list and citation all need a name; acquisition's parks have none today."
+decided = 2026-10-09
+status = "ruled"

@@ -1,0 +1,13 @@
+id = "B16"
+area = "repo"
+title = "Bothy is its own first consumer"
+ruling = '''
+Bothy's rulings and parks live in `bothy/` in this repository, written
+by hand before the tool existed. The design brief is history once they
+exist: where the brief and an entry disagree, the entry wins.
+Acquisition's playground is the second consumer and master's claims and
+findings the third.
+'''
+why = "A generalization wants two consumers before it is made; this is the cheapest one, and the one that tests writing the format by hand."
+decided = 2026-10-09
+status = "ruled"

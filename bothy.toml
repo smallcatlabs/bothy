@@ -1,0 +1,61 @@
+# bothy.toml — bothy's own book. Bothy is its first consumer (B16).
+#
+# This file declares what the tool needs to know about a consumer: where
+# the entries live, which letters mean which registers, which areas exist
+# and which paths they govern, which files are scanned for citations, and
+# which enumerations are closed. Everything else is in the entries.
+
+root = "."
+
+# Areas. An entry names one; an undeclared name is refused (B19).
+# `paths` lets `pack --path <file>` find the area a file belongs to.
+
+[area.cross-cutting]
+title = "What every area must know"
+
+[area.schema]
+title = "The source: entry kinds, files, ids, namespaces, areas"
+paths = ["src/schema/**", "src/book/**"]
+
+[area.check]
+title = "Integrity: what check refuses and what it reports"
+paths = ["src/check/**"]
+
+[area.render]
+title = "Projections: templates and the markdown they write"
+paths = ["src/render/**"]
+
+[area.pack]
+title = "Assembly: what a session reads for one task"
+paths = ["src/pack/**"]
+
+[area.cli]
+title = "The command line, its output, and the servers over the same crate"
+paths = ["src/main.rs", "src/cli/**"]
+
+[area.repo]
+title = "This repository: language, dependencies, consumers, release"
+
+# Namespaces. A letter plus the scope in which it means this register
+# (B10). Scope defaults to the whole root. Decisions are expected to be
+# cited and the uncited ones are reported; parks are not.
+
+[namespace.B]
+kind = "decision"
+dir = "bothy/decisions"
+
+[namespace.K]
+kind = "park"
+dir = "bothy/parks"
+
+# Where citations are looked for. One set per consumer; a citation of an
+# id outside every scope of its letter is a check failure.
+
+[cite]
+paths = ["src/**/*.rs", "tests/**/*.rs", "README.md", "docs/*.md", "bothy.toml"]
+exclude = ["docs/35-*.md"]
+
+# Closed enumerations (B7). A value outside the list is a check failure.
+
+[enum.decision_status]
+values = ["ruled", "superseded", "retired"]

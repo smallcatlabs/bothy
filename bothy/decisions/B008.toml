@@ -1,0 +1,12 @@
+id = "B8"
+area = "cross-cutting"
+title = "The index is in memory, rebuilt every run; there is no database"
+ruling = '''
+Every verb reads the whole book and the citation sites, builds its maps,
+answers and exits. Every verb takes `--json`, so a script or an agent
+gets the same answer a reader does. Alternative considered: SQLite,
+rebuilt per run and gitignored (the brief's D4), parked as K7.
+'''
+why = "The first consumer has about 170 entries and a few thousand citation sites, which two hash maps answer instantly; a bundled database is a C compile, a dependency and a gitignored file for a question nobody has asked yet."
+decided = 2026-10-09
+status = "ruled"

@@ -1,0 +1,10 @@
+id = "B14"
+area = "cli"
+title = "Writes go through toml_edit; the tool never reorders keys, rewrites values it did not change, or strips comments"
+ruling = '''
+`amend` adds a line; it does not reformat the file. Optional fields are
+omitted, not written empty, in files the tool creates.
+'''
+why = "An entry is its author's file."
+decided = 2026-10-09
+status = "ruled"

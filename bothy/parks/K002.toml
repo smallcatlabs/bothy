@@ -1,0 +1,6 @@
+id = "K2"
+area = "pack"
+item = "Token counting by the exact model tokenizer"
+home = "the pack footer, beside the estimate"
+trigger = "a budget decision the estimate got wrong by more than ten percent"
+parked = 2026-10-09

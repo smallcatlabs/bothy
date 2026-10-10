@@ -1,0 +1,7 @@
+id = "K4"
+area = "repo"
+item = "Session capture in the style of Agent Trace or Entire checkpoints"
+home = "a separate tool; bothy keeps rulings, not transcripts"
+trigger = "a review round whose question 'why did the agent do that' the commit message could not answer"
+why = "acquisition note 35 §8 says why this is parked and not planned"
+parked = 2026-10-09

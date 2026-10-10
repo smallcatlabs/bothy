@@ -1,0 +1,11 @@
+id = "B12"
+area = "repo"
+title = "Rust, edition 2024: clap, serde, toml and toml_edit, minijinja, globset and ignore, regex"
+ruling = '''
+No async in v0. `rmcp` and `tokio` arrive with the MCP server (K8) and
+not before. A dependency is added when a verb needs it, in the commit
+that adds the verb.
+'''
+why = "Each is the plain choice for its job; async is a cost with no v0 buyer."
+decided = 2026-10-09
+status = "ruled"

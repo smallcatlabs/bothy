@@ -1,0 +1,6 @@
+id = "K5"
+area = "repo"
+item = "Publishing to crates.io"
+home = "a release workflow in this repository"
+trigger = "v0's done-criteria passing, and one consumer outside Small Cat Labs the owner would show it to"
+parked = 2026-10-09

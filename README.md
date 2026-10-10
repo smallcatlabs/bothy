@@ -27,13 +27,16 @@ bothy check                    # ids, citations, budgets, projections current
 bothy render --check           # the markdown on disk matches the source
 ```
 
-The source is TOML the owner can edit with a text editor, one entry per
-file. The index is SQLite, rebuilt every run, never committed. The
+The source is TOML anyone can edit with a text editor, one entry per
+file. The index is built in memory every run and never written. The
 markdown is a projection. Those three roles — intent, derivation,
 rendering — are the design.
 
-Status: a design brief and a grammar audit of its first consumer,
-[acquisition](https://github.com/smallcatlabs/acquisition). No code
-yet. See `docs/design-brief.md`.
+Status: a design brief, a grammar audit of its second consumer,
+[acquisition](https://github.com/gerwaric/acquisition), and bothy's own
+book under `bothy/`: twenty rulings and ten parks, written by hand
+before the tool existed. The tool is its own first consumer. Everything
+it writes for a reader is written for the smallest model in use. See
+`docs/design-brief.md`.
 
 Leave it as you'd wish to find it.

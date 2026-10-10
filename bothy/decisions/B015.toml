@@ -1,0 +1,16 @@
+id = "B15"
+area = "pack"
+title = "pack is the primary read surface"
+ruling = '''
+It takes `--area <name>`, `--path <file>` (the area resolved through the
+paths `bothy.toml` declares) or `--for <id>`. Its order is fixed:
+invariants, principles, cross-cutting rulings, the area's rulings, its
+parks, the open slice's checklist, then the citation map from id to
+file:line so the reader knows where each mechanism lives. Its footer
+carries bytes, a token estimate with the estimator's name, and the
+commit it was built at. `--budget` trims from the tail and names what it
+trimmed; nothing is trimmed silently.
+'''
+why = "It is the verb every session runs first; whether it is seamless is whether the tool is."
+decided = 2026-10-09
+status = "ruled"

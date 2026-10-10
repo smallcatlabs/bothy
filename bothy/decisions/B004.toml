@@ -1,0 +1,12 @@
+id = "B4"
+area = "cross-cutting"
+title = "The tool never writes outside its own tree and its declared projections"
+ruling = '''
+It scans a consumer's code and documents for citations; it never
+inserts, edits or reflows anything there. The only files it writes are
+entries under the directories `bothy.toml` names and the projections it
+declares.
+'''
+why = "A tool that edits code needs a review a registry tool should never need."
+decided = 2026-10-09
+status = "ruled"
