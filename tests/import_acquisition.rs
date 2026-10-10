@@ -10,7 +10,7 @@
 
 use std::path::PathBuf;
 
-use bothy::{Book, Level, check, import};
+use bothy::{Book, Level, check, import, pack};
 
 fn playground() -> Option<PathBuf> {
     let path = std::env::var("BOTHY_ACQUISITION")
@@ -107,5 +107,24 @@ fn acquisition_imports_whole_and_passes_check() {
         uncited.contains(&"C16".to_string()),
         "docs-check reports C16 uncited today; so must this: {uncited:?}"
     );
+
+    // The store area's intro names the files it governs, so a session
+    // can ask by the file it is about to change (B19), and the pack it
+    // gets opens with what the project is (B27).
+    let request = pack::Request {
+        paths: vec!["crates/acquisition-store/src/lib.rs".into()],
+        ..Default::default()
+    };
+    let packed = pack::build(&book, &request).expect("the path resolves to an area");
+    assert_eq!(packed.areas, ["store"]);
+    let orientation = pack_pos(&packed.text, "Acquisition is ");
+    assert!(orientation < pack_pos(&packed.text, "## Invariants"));
+    assert!(packed.text.contains("## Rulings for `store`"));
+    assert!(packed.text.contains("## Parked across every area"));
     let _ = std::fs::remove_dir_all(&out);
+}
+
+fn pack_pos(text: &str, needle: &str) -> usize {
+    text.find(needle)
+        .unwrap_or_else(|| panic!("the pack has no {needle:?}"))
 }

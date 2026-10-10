@@ -45,6 +45,10 @@ pub struct AreaMeta {
     pub index_title: Option<String>,
     pub intro: Option<String>,
     pub parked_intro: Option<String>,
+    /// The files the intro says the area governs, each found on disk.
+    pub paths: Vec<String>,
+    /// Files the intro names that were not found where it points.
+    pub paths_not_found: Vec<String>,
     /// The file's sections in order, each with its decision ids in order.
     pub sections: Vec<(String, Vec<Id>)>,
     /// The file's parks in order, by item text until ids are assigned.
@@ -110,6 +114,11 @@ pub fn parse_playground(root: &Path) -> Result<Imported> {
             .to_string();
         let text = std::fs::read_to_string(&path)?;
         parse_area_file(&area, &text, &mut out, root)?;
+        if let Some(meta) = out.areas.get_mut(&area)
+            && let Some(intro) = meta.intro.clone()
+        {
+            (meta.paths, meta.paths_not_found) = governed_paths(&intro, root);
+        }
     }
 
     fill_dates_from_git(root, &mut out);
@@ -259,6 +268,54 @@ fn parse_context(text: &str, out: &mut Imported, _root: &Path) -> Result<()> {
     cross.sections = vec![("Cross-cutting".to_string(), cross_ids)];
     cross.park_items = cross_parks;
     Ok(())
+}
+
+/// The files an area file's intro says it governs, as globs under the
+/// root, for `pack --path` (B19). The intro names them in backticks
+/// before "Read this before": a path inside a crate
+/// (`acquisition-store/src/lib.rs`), a bare file name beside the one
+/// before it (`snapshot.rs`), or a whole crate (`acquisition-cli`).
+/// Only what exists on disk is returned; a file name that was not found
+/// where the intro points is returned second, to be reported, and
+/// anything else in backticks (a type, a verb) is not a path.
+pub fn governed_paths(intro: &str, root: &Path) -> (Vec<String>, Vec<String>) {
+    let scope = intro.split("Read this before").next().unwrap_or(intro);
+    let tick = Regex::new(r"`([^`]+)`").expect("fixed");
+    let mut found: Vec<String> = Vec::new();
+    let mut missing: Vec<String> = Vec::new();
+    let mut dir: Option<String> = None;
+    for c in tick.captures_iter(scope) {
+        let token = &c[1];
+        let candidate = if token.starts_with("acquisition-") && token.contains('/') {
+            dir = token.rsplit_once('/').map(|(d, _)| d.to_string());
+            format!("crates/{token}")
+        } else if token.starts_with("acquisition-") && !token.contains(['.', ' ']) {
+            format!("crates/{token}")
+        } else if token.ends_with(".rs") && !token.contains(['/', ' ']) {
+            match &dir {
+                Some(d) => format!("crates/{d}/{token}"),
+                None => {
+                    missing.push(token.to_string());
+                    continue;
+                }
+            }
+        } else {
+            continue;
+        };
+        let on_disk = root.join(&candidate);
+        let glob = if on_disk.is_dir() {
+            format!("{candidate}/**")
+        } else if on_disk.is_file() {
+            candidate
+        } else {
+            missing.push(candidate);
+            continue;
+        };
+        if !found.contains(&glob) {
+            found.push(glob);
+        }
+    }
+    (found, missing)
 }
 
 /// `decisions/<area>.md`: the title, the intro, sections of decisions,
@@ -717,9 +774,22 @@ fn config_toml(imported: &Imported, root: &Path, out_dir: &Path, inside: bool) -
         if let Some(t) = &meta.parked_intro {
             let _ = writeln!(s, "parked_intro = {}", emit::string(t));
         }
+        if meta.paths.is_empty() {
+            let _ = writeln!(
+                s,
+                "paths = []  # the crates and files this area governs; fill in by hand"
+            );
+        } else {
+            let globs: Vec<String> = meta.paths.iter().map(|p| emit::string(p)).collect();
+            let _ = writeln!(
+                s,
+                "# Read from the files this area's intro names; check it and add what the intro left out.\npaths = [{}]",
+                globs.join(", ")
+            );
+        }
         let _ = writeln!(
             s,
-            "paths = []  # the crates and files this area governs; fill in by hand"
+            "also = []  # documents a session reads before touching this area, each `{{ path = \"...\", why = \"...\" }}`; fill in by hand"
         );
         if !meta.parks.is_empty() {
             let ids: Vec<String> = meta.parks.iter().map(|i| format!("\"{i}\"")).collect();
@@ -871,6 +941,19 @@ pub fn report(imported: &Imported) -> String {
                 meta.title
             );
         }
+        if !meta.paths_not_found.is_empty() {
+            let _ = writeln!(
+                r,
+                "note  area {name}: its intro names files that are not where it points, so they are not in `paths`: {}",
+                meta.paths_not_found.join(", ")
+            );
+        }
+        if meta.paths.is_empty() && name != "cross-cutting" {
+            let _ = writeln!(
+                r,
+                "note  area {name}: its intro names no file found on disk, so `paths` is empty and `pack --path` cannot reach it; fill it in by hand"
+            );
+        }
     }
     if !imported.undeclared.is_empty() {
         let list: Vec<String> = imported
@@ -893,6 +976,38 @@ pub fn report(imported: &Imported) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_intro_names_the_files_its_area_governs() {
+        let root = std::env::temp_dir().join(format!("bothy-paths-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        for file in [
+            "crates/acquisition-store/src/lib.rs",
+            "crates/acquisition-store/src/snapshot.rs",
+            "crates/acquisition-protocol/src/realm.rs",
+            "crates/acquisition-cli/src/main.rs",
+        ] {
+            let path = root.join(file);
+            std::fs::create_dir_all(path.parent().expect("a parent")).expect("mkdir");
+            std::fs::write(path, "").expect("write");
+        }
+        let intro = "The rulings that bind ingest and `PricePlan` (`acquisition-store/src/lib.rs`, \
+                     `snapshot.rs`, `gone.rs`, `acquisition-protocol/src/realm.rs`, `acquisition-cli`). \
+                     Read this before touching that code; the rest is in `acquisition-mcp`.";
+        let (found, missing) = governed_paths(intro, &root);
+        assert_eq!(
+            found,
+            [
+                "crates/acquisition-store/src/lib.rs",
+                "crates/acquisition-store/src/snapshot.rs",
+                "crates/acquisition-protocol/src/realm.rs",
+                "crates/acquisition-cli/**",
+            ],
+            "a path, a file beside the one before it, and a whole crate; a type is not a path, and nothing after \"Read this before\" is read"
+        );
+        assert_eq!(missing, ["crates/acquisition-store/src/gone.rs"]);
+        let _ = std::fs::remove_dir_all(&root);
+    }
 
     #[test]
     fn a_plain_decision_splits_into_its_fields() {
