@@ -423,3 +423,24 @@ fn fire_refuses_what_is_not_a_park_or_not_a_ruling_and_writes_nothing() {
         P1
     );
 }
+
+#[test]
+fn a_ruling_defined_outside_the_book_fires_a_park_and_is_left_alone() {
+    let dir = fixture("fire-external");
+    let config = format!(
+        "{CONFIG}\n[namespace.N]\nkind = \"external\"\ndefined_in = \"notes.md\"\npattern = '^- \\*\\*(N\\d+)'\n"
+    );
+    std::fs::write(dir.join("bothy.toml"), config).unwrap();
+    let notes = "- **N4** measured twice\n";
+    std::fs::write(dir.join("notes.md"), notes).unwrap();
+
+    let fired = write::fire(&open(&dir), id("P1"), id("N4"), &day("2026-10-10")).unwrap();
+    assert!(fired.evidence_added_to.is_none());
+    assert_eq!(
+        std::fs::read_to_string(dir.join("notes.md")).unwrap(),
+        notes
+    );
+    let text = std::fs::read_to_string(dir.join("book/parks/P001.toml")).unwrap();
+    assert!(text.ends_with("fired_by = \"N4\"\n"), "{text}");
+    assert!(failures(&open(&dir)).is_empty());
+}
