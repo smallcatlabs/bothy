@@ -1,0 +1,13 @@
+id = "B21"
+area = "render"
+title = "An area's reading order is projection data: the layout in bothy.toml, never a field on the entry"
+ruling = '''
+An area block declares its sections, each with its decision ids in
+reading order, and its parks in order. The renderer follows the layout;
+an entry the layout does not place renders after the placed ones, by
+id, and `check` says so. An entry knows its area and nothing about
+where in the file it sits.
+'''
+why = "The order of acquisition's files is curated, not ascending: C108 sits with the store facts it extends and C85 beside C9. Order is a rendering concern, so it lives with the template, and an entry file stays a fact about one ruling."
+decided = 2026-10-10
+status = "ruled"

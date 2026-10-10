@@ -28,6 +28,10 @@ pub struct Loaded {
 }
 
 impl Loaded {
+    pub fn kind_name(&self) -> &'static str {
+        crate::render::kind_name(self.kind)
+    }
+
     /// The 1-based line on which `key =` first appears, for a message.
     pub fn line_of(&self, key: &str) -> Option<usize> {
         self.source

@@ -39,6 +39,11 @@ pub struct AreaMeta {
     pub index_title: Option<String>,
     pub intro: Option<String>,
     pub parked_intro: Option<String>,
+    /// The file's sections in order, each with its decision ids in order.
+    pub sections: Vec<(String, Vec<Id>)>,
+    /// The file's parks in order, by item text until ids are assigned.
+    pub park_items: Vec<String>,
+    pub parks: Vec<Id>,
 }
 
 #[derive(Debug, Default)]
@@ -54,6 +59,8 @@ pub struct Imported {
     pub exceptions: Vec<String>,
     /// Letters named inside entries that no namespace will define.
     pub undeclared: BTreeMap<char, usize>,
+    /// `CONTEXT.md` with its generated blocks replaced by template tags.
+    pub context_template: String,
 }
 
 const MARKERS: [&str; 4] = ["Why", "Details", "Pinned", "Evidence"];
@@ -110,9 +117,54 @@ fn read(root: &Path, rel: &str) -> Result<String> {
 fn parse_context(text: &str, out: &mut Imported, _root: &Path) -> Result<()> {
     let inv_re = Regex::new(r"^(\d+)\. \*\*(.*?)\*\* (.*)$").expect("fixed");
     let prin_re = Regex::new(r"^- \*\*P(\d+)\.\*\* (.*)$").expect("fixed");
+    let row_re = Regex::new(r"^\| `decisions/(\w+)\.md` \|").expect("fixed");
     let mut section = String::new();
+    let mut cross_ids: Vec<Id> = Vec::new();
+    let mut cross_parks: Vec<String> = Vec::new();
+    // Each generated block becomes one template tag: a run of lines of one
+    // kind is replaced once, and the tag carries the lines' own newlines.
+    let mut template = String::new();
+    let mut last_block: Option<&str> = None;
     for (i, line) in text.lines().enumerate() {
         let lineno = i + 1;
+        let block = if section.starts_with("Invariants") && inv_re.is_match(line) {
+            Some((
+                "invariants",
+                "{% for e in invariants %}{{ e.line }}\n{% endfor %}",
+            ))
+        } else if section.starts_with("Working style") && prin_re.is_match(line) {
+            Some((
+                "principles",
+                "{% for e in principles %}{{ e.line }}\n{% endfor %}",
+            ))
+        } else if section.starts_with("Decisions") && row_re.is_match(line) {
+            Some((
+                "index",
+                "{% for r in index %}| `decisions/{{ r.file }}.md` | {{ r.title }} | {{ r.ids }} |\n{% endfor %}",
+            ))
+        } else if section.starts_with("Decisions") && line.starts_with("- **C") {
+            Some(("cross", "{% for e in cross %}{{ e.line }}\n{% endfor %}"))
+        } else if section.starts_with("Parked") && line.starts_with("- ") {
+            Some((
+                "cross_parks",
+                "{% for e in cross_parks %}{{ e.line }}\n{% endfor %}",
+            ))
+        } else {
+            None
+        };
+        match block {
+            Some((kind, tag)) => {
+                if last_block != Some(kind) {
+                    template.push_str(tag);
+                    last_block = Some(kind);
+                }
+            }
+            None => {
+                last_block = None;
+                template.push_str(line);
+                template.push('\n');
+            }
+        }
         if let Some(h) = line.strip_prefix("## ") {
             section = h.to_string();
             continue;
@@ -150,19 +202,30 @@ fn parse_context(text: &str, out: &mut Imported, _root: &Path) -> Result<()> {
             continue;
         }
         if section.starts_with("Decisions") && line.starts_with("- **C") {
-            match parse_decision(line, "cross-cutting", None) {
-                Ok(d) => out.decisions.push(d),
+            match parse_decision(line, "cross-cutting") {
+                Ok(d) => {
+                    cross_ids.push(d.id);
+                    out.decisions.push(d);
+                }
                 Err(e) => out.exceptions.push(format!("CONTEXT.md:{lineno}: {e}")),
             }
             continue;
         }
         if section.starts_with("Parked") && line.starts_with("- ") {
             match parse_park(&line[2..], "cross-cutting") {
-                Ok(p) => out.parks.push(p),
+                Ok(p) => {
+                    cross_parks.push(p.item.clone());
+                    out.parks.push(p);
+                }
                 Err(e) => out.exceptions.push(format!("CONTEXT.md:{lineno}: {e}")),
             }
         }
     }
+    out.context_template = template;
+    let cross = out.areas.entry("cross-cutting".to_string()).or_default();
+    cross.title = "What every area must know".into();
+    cross.sections = vec![("Cross-cutting".to_string(), cross_ids)];
+    cross.park_items = cross_parks;
     Ok(())
 }
 
@@ -170,52 +233,74 @@ fn parse_context(text: &str, out: &mut Imported, _root: &Path) -> Result<()> {
 /// then `## Parked` with its intro and its parks.
 fn parse_area_file(area: &str, text: &str, out: &mut Imported, _root: &Path) -> Result<()> {
     let meta = out.areas.entry(area.to_string()).or_default();
-    let mut section: Option<String> = None;
     let mut in_parked = false;
-    let mut after_heading = false;
+    // Prose between a heading and the first bullet is the heading's
+    // intro, blank lines included, so a two-paragraph intro survives.
+    let mut intro_lines: Vec<&str> = Vec::new();
+    let mut collecting: Option<&str> = None;
+    fn flush(meta: &mut AreaMeta, collecting: &mut Option<&str>, lines: &mut Vec<&str>) {
+        let text = lines.join("\n").trim().to_string();
+        match collecting.take() {
+            Some("intro") if !text.is_empty() => meta.intro = Some(text),
+            Some("parked") if !text.is_empty() => meta.parked_intro = Some(text),
+            _ => {}
+        }
+        lines.clear();
+    }
     for (i, line) in text.lines().enumerate() {
         let lineno = i + 1;
         if let Some(h) = line.strip_prefix("# ") {
             meta.title = h.strip_prefix("Decisions — ").unwrap_or(h).to_string();
-            after_heading = true;
+            collecting = Some("intro");
             continue;
         }
         if let Some(h) = line.strip_prefix("## ") {
+            flush(meta, &mut collecting, &mut intro_lines);
             in_parked = h.starts_with("Parked");
-            section = if in_parked { None } else { Some(h.to_string()) };
-            after_heading = true;
-            continue;
-        }
-        if line.is_empty() {
-            continue;
-        }
-        if after_heading && !line.starts_with("- ") {
-            // The first paragraph after a heading is its intro.
             if in_parked {
-                meta.parked_intro = Some(line.to_string());
-            } else if meta.intro.is_none() && section.is_none() {
-                meta.intro = Some(line.to_string());
+                collecting = Some("parked");
+            } else {
+                meta.sections.push((h.to_string(), Vec::new()));
+                collecting = Some("section");
             }
-            after_heading = false;
             continue;
         }
-        after_heading = false;
-        if in_parked && line.starts_with("- ") {
+        if !line.starts_with("- ") {
+            if collecting.is_some() {
+                intro_lines.push(line);
+            }
+            continue;
+        }
+        flush(meta, &mut collecting, &mut intro_lines);
+        if in_parked {
             match parse_park(&line[2..], area) {
-                Ok(p) => out.parks.push(p),
+                Ok(p) => {
+                    meta.park_items.push(p.item.clone());
+                    out.parks.push(p);
+                }
                 Err(e) => out
                     .exceptions
                     .push(format!("decisions/{area}.md:{lineno}: {e}")),
             }
         } else if line.starts_with("- **C") {
-            match parse_decision(line, area, section.as_deref()) {
-                Ok(d) => out.decisions.push(d),
+            match parse_decision(line, area) {
+                Ok(d) => {
+                    match meta.sections.last_mut() {
+                        Some(last) => last.1.push(d.id),
+                        None => out.exceptions.push(format!(
+                            "decisions/{area}.md:{lineno}: {} sits before any `## ` section",
+                            d.id
+                        )),
+                    }
+                    out.decisions.push(d);
+                }
                 Err(e) => out
                     .exceptions
                     .push(format!("decisions/{area}.md:{lineno}: {e}")),
             }
         }
     }
+    flush(meta, &mut collecting, &mut intro_lines);
     if meta.title.is_empty() {
         out.exceptions.push(format!(
             "decisions/{area}.md: no `# Decisions — <title>` heading"
@@ -233,7 +318,6 @@ fn blank_decision() -> Decision {
         area: String::new(),
         title: String::new(),
         ruling: String::new(),
-        section: None,
         why: None,
         details: Vec::new(),
         pinned: Vec::new(),
@@ -249,7 +333,7 @@ fn blank_decision() -> Decision {
 }
 
 /// `- **C<n> — <title>** <body>`.
-pub fn parse_decision(line: &str, area: &str, section: Option<&str>) -> Result<Decision> {
+pub fn parse_decision(line: &str, area: &str) -> Result<Decision> {
     // The body follows the title's `**` after a space, or with no space
     // when it opens with punctuation ("**...realm**, stamped from..."); the
     // renderer puts the space back by the same rule.
@@ -313,7 +397,6 @@ pub fn parse_decision(line: &str, area: &str, section: Option<&str>) -> Result<D
         },
         area: area.to_string(),
         title,
-        section: section.map(str::to_string),
         history,
         ..blank_decision()
     };
@@ -343,6 +426,14 @@ fn history_start(text: &str) -> Option<usize> {
         if before.is_empty() || before.ends_with(['.', ')', '`', '*']) {
             return Some(m.start());
         }
+    }
+    // A bare date as the last sentence ("… `derive.rs`. 2026-09-17.") is a
+    // dating sentence too.
+    let bare = Regex::new(r" (\d{4}-\d{2}-\d{2}\.)$").expect("fixed");
+    if let Some(m) = bare.find(text)
+        && text[..m.start()].ends_with(['.', ')', '`', '*'])
+    {
+        return Some(m.start() + 1);
     }
     None
 }
@@ -411,6 +502,19 @@ fn fill_dates_from_git(root: &Path, out: &mut Imported) {
             letter: 'K',
             number: k as u32 + 1,
         };
+    }
+    // The layouts named parks by item text; now they have ids.
+    let by_item: BTreeMap<(String, String), Id> = out
+        .parks
+        .iter()
+        .map(|p| ((p.area.clone(), p.item.clone()), p.id))
+        .collect();
+    for (name, meta) in out.areas.iter_mut() {
+        meta.parks = meta
+            .park_items
+            .iter()
+            .filter_map(|item| by_item.get(&(name.clone(), item.clone())).copied())
+            .collect();
     }
     for k in undated {
         let p = &out.parks[k];
@@ -521,6 +625,9 @@ pub fn write(imported: &Imported, out_dir: &Path, root: &Path) -> Result<Summary
         write_entry("parks", p.id.file_stem(), emit::park(p))?;
     }
 
+    let templates = out_dir.join("templates");
+    std::fs::create_dir_all(&templates)?;
+    std::fs::write(templates.join("context.md"), &imported.context_template)?;
     let config = config_toml(imported, &root, &out_dir, inside);
     std::fs::write(out_dir.join("bothy.toml"), config)?;
     Ok(Summary {
@@ -544,22 +651,19 @@ fn config_toml(imported: &Imported, root: &Path, out_dir: &Path, inside: bool) -
     );
     let _ = writeln!(
         s,
-        "# Areas come from decisions/*.md; namespaces are what the registry owns (C, K, P, I)"
+        "# Areas come from decisions/*.md, each with the curated order of its file; namespaces"
     );
     let _ = writeln!(
         s,
-        "# and what it only cites (N, T, S, F); the scan set is tools/docs-check.sh's.\n"
+        "# are what the registry owns (C, K, P, I) and what it only cites (N, T, S, F); the"
     );
+    let _ = writeln!(s, "# scan set is tools/docs-check.sh's.\n");
     if inside {
         let rel = pathdiff(out_dir, root);
         let _ = writeln!(s, "root = {}\n", emit::string(&rel));
     } else {
         let _ = writeln!(s, "root = {}\n", emit::string(&root.display().to_string()));
     }
-    let _ = writeln!(
-        s,
-        "[area.cross-cutting]\ntitle = \"What every area must know\"\n"
-    );
     for (name, meta) in &imported.areas {
         let _ = writeln!(s, "[area.{name}]");
         let _ = writeln!(s, "title = {}", emit::string(&meta.title));
@@ -576,9 +680,33 @@ fn config_toml(imported: &Imported, root: &Path, out_dir: &Path, inside: bool) -
         }
         let _ = writeln!(
             s,
-            "paths = []  # the crates and files this area governs; fill in by hand\n"
+            "paths = []  # the crates and files this area governs; fill in by hand"
         );
+        if !meta.parks.is_empty() {
+            let ids: Vec<String> = meta.parks.iter().map(|i| format!("\"{i}\"")).collect();
+            let _ = writeln!(s, "parks = [{}]", ids.join(", "));
+        }
+        for (title, ids) in &meta.sections {
+            let ids: Vec<String> = ids.iter().map(|i| format!("\"{i}\"")).collect();
+            let _ = writeln!(
+                s,
+                "[[area.{name}.sections]]\ntitle = {}\nids = [{}]",
+                emit::string(title),
+                ids.join(", ")
+            );
+        }
+        s.push('\n');
     }
+    let template = if inside {
+        "templates/context.md".to_string()
+    } else {
+        out_dir.join("templates/context.md").display().to_string()
+    };
+    let _ = writeln!(
+        s,
+        "# The rendered files. `header = false` keeps them byte-identical to the hand-kept\n# originals; turn it on at adoption so each file's first line names its source.\n[[projection]]\nout = \"CONTEXT.md\"\ntemplate = {}\nheader = false\n\n[[projection]]\nout = \"decisions/{{area}}.md\"\nfor_each = \"area\"\nexcept = [\"cross-cutting\"]\nheader = false\n",
+        emit::string(&template)
+    );
     let dir = |sub: &str| -> String {
         if inside {
             format!("bothy/{sub}")
@@ -730,20 +858,19 @@ mod tests {
     #[test]
     fn a_plain_decision_splits_into_its_fields() {
         let line = "- **C54 — Authority is the coarser observation's.** A location is its full coordinate. *Why:* five rounds found it. *Details:* `lib.rs` doc, C54.";
-        let d = parse_decision(line, "store", Some("Store: facts")).unwrap();
+        let d = parse_decision(line, "store").unwrap();
         assert_eq!(d.id.to_string(), "C54");
         assert_eq!(d.title, "Authority is the coarser observation's.");
         assert_eq!(d.ruling, "A location is its full coordinate.");
         assert_eq!(d.why.as_deref(), Some("five rounds found it."));
         assert_eq!(d.details, vec!["`lib.rs` doc, C54.".to_string()]);
-        assert_eq!(d.section.as_deref(), Some("Store: facts"));
         assert!(d.history.is_none());
     }
 
     #[test]
     fn a_title_joined_by_punctuation_keeps_the_punctuation_in_the_ruling() {
         let line = "- **C60 — The store's realm is the request's realm**, stamped from the params. *Evidence:* N42. Ruled 2026-09-02.";
-        let d = parse_decision(line, "store", None).unwrap();
+        let d = parse_decision(line, "store").unwrap();
         assert_eq!(d.title, "The store's realm is the request's realm");
         assert_eq!(d.ruling, ", stamped from the params.");
         assert_eq!(d.evidence, vec!["N42.".to_string()]);
@@ -753,7 +880,7 @@ mod tests {
     #[test]
     fn the_dating_sentence_at_the_end_becomes_history_wherever_the_last_marker_is() {
         let line = "- **C1 — Cargo workspace.** Every crate's edges. *Why:* once. *Pinned:* `tools/docs-check.sh`. Amended 2026-09-09, 2026-09-17.";
-        let d = parse_decision(line, "cross-cutting", None).unwrap();
+        let d = parse_decision(line, "cross-cutting").unwrap();
         assert_eq!(d.pinned, vec!["`tools/docs-check.sh`.".to_string()]);
         assert_eq!(
             d.history.as_deref(),
@@ -761,7 +888,7 @@ mod tests {
         );
 
         let line = "- **C57 — A skill is a property of its host.** Left in the host's json. *Details:* store doc, C57. Ruled 2026-09-02 (owner: (a), until GGG changes it).";
-        let d = parse_decision(line, "store", None).unwrap();
+        let d = parse_decision(line, "store").unwrap();
         assert_eq!(
             d.history.as_deref(),
             Some("Ruled 2026-09-02 (owner: (a), until GGG changes it).")
@@ -771,7 +898,7 @@ mod tests {
     #[test]
     fn a_date_inside_the_ruling_stays_there() {
         let line = "- **C38 — Plans are binding.** Reviewed work stays exact. Decided 2026-08-31; **confirmed live 2026-09-01** with no friction. *Details:* `acquisition-plan` doc, C38.";
-        let d = parse_decision(line, "cross-cutting", None).unwrap();
+        let d = parse_decision(line, "cross-cutting").unwrap();
         assert!(d.ruling.contains("Decided 2026-08-31"));
         assert!(
             d.history.is_none(),
@@ -783,7 +910,7 @@ mod tests {
     #[test]
     fn a_repeated_marker_is_refused() {
         let line = "- **C9 — Two whys.** r. *Why:* a. *Why:* b.";
-        let err = parse_decision(line, "x", None).unwrap_err();
+        let err = parse_decision(line, "x").unwrap_err();
         assert!(err.to_string().contains("appears twice"));
     }
 
@@ -827,6 +954,16 @@ mod tests {
             history_start("the rule Decided 2026-08-24 applies"),
             None,
             "mid-sentence is prose"
+        );
+        assert_eq!(
+            history_start("`tests/derive.rs`. 2026-09-17."),
+            Some(19),
+            "a bare trailing date is history"
+        );
+        assert_eq!(
+            history_start("measured on 2026-09-17."),
+            None,
+            "a date inside a sentence is prose"
         );
     }
 }

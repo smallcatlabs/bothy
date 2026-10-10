@@ -84,6 +84,17 @@ pub fn run(book: &Book) -> Result<Report> {
     check_cross_references(book, &mut out);
     check_citations(book, &citations, &mut out);
     let uncited = report_uncited(book, &citations, &mut out);
+    if !book.config.projection.is_empty() {
+        let mut notes = Vec::new();
+        out.extend(crate::render::check(book, &mut notes)?);
+        out.extend(notes);
+    } else {
+        let mut notes = Vec::new();
+        for name in book.config.area.keys() {
+            crate::render::area_view(book, name, &mut notes);
+        }
+        out.extend(notes);
+    }
 
     Ok(Report {
         diagnostics: out,

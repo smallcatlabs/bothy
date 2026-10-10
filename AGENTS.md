@@ -48,9 +48,11 @@ rulings are entries in `bothy/decisions/` and its deferred work in
 
 ## What exists and what does not
 
-`check`, `list`, `show`, `pack` and `import` exist. `render`, `new`,
+`check`, `list`, `show`, `pack`, `import` and `render` exist. `new`,
 `amend` and `park fire` are described in the brief and do not exist
 yet; the uncited rulings `check` reports are the ones waiting for them.
+`docs/book.md` is rendered from the entries: change an entry, run
+`bothy render`, commit both.
 
 `import` reads acquisition's registry from the owner's clone at
 `~/Development/GitHub/gerwaric/acquisition/spikes/rust-playground` and

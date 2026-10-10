@@ -52,9 +52,6 @@ pub struct Decision {
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub title: String,
     pub ruling: String,
-    /// The heading the entry sits under in its area's rendered file.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub section: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub why: Option<String>,
     /// Where the mechanism lives: a module doc, a file.

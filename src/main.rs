@@ -6,7 +6,7 @@
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use anyhow::{Result, anyhow};
+use anyhow::{Result, anyhow, bail};
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use serde::Serialize;
 
@@ -17,6 +17,7 @@ use bothy::config::Kind;
 use bothy::id::Id;
 use bothy::import;
 use bothy::pack;
+use bothy::render;
 use bothy::schema::Entry;
 
 /// bothy — the book the next session reads.
@@ -71,6 +72,20 @@ enum Command {
     /// Migrate a markdown registry into entries, once. Writes nothing
     /// under the source tree.
     Import(ImportArgs),
+
+    /// Write the markdown files the book projects, or check them.
+    ///
+    /// Without flags, every projection in bothy.toml is rendered and
+    /// written. With --check nothing is written and the exit is 1 if any
+    /// file on disk differs from its render. --diff shows the difference.
+    Render {
+        /// Compare with the files on disk instead of writing.
+        #[arg(long)]
+        check: bool,
+        /// Print a unified diff for each file that differs; implies --check.
+        #[arg(long)]
+        diff: bool,
+    },
 }
 
 #[derive(Args)]
@@ -173,15 +188,7 @@ struct Row<'a> {
     entry: &'a Entry,
 }
 
-fn kind_name(kind: Kind) -> &'static str {
-    match kind {
-        Kind::Decision => "decision",
-        Kind::Invariant => "invariant",
-        Kind::Principle => "principle",
-        Kind::Park => "park",
-        Kind::External => "external",
-    }
-}
+use render::kind_name;
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
@@ -344,6 +351,80 @@ fn run(cli: Cli) -> Result<ExitCode> {
         }
 
         Command::Import(_) => unreachable!("handled before the book is opened"),
+
+        Command::Render { check, diff } => {
+            if book.config.projection.is_empty() {
+                bail!(
+                    "this book declares no [[projection]] in bothy.toml, so there is nothing to render"
+                );
+            }
+            let mut notes = Vec::new();
+            if check || diff {
+                let rendered = render::all(&book, &mut notes)?;
+                let mut differing = Vec::new();
+                for r in &rendered {
+                    let on_disk =
+                        std::fs::read_to_string(book.root.join(&r.path)).unwrap_or_default();
+                    if on_disk != r.text {
+                        differing.push(r.path.clone());
+                        if diff && !cli.json {
+                            print!("{}", render::unified(&r.path, &on_disk, &r.text));
+                        }
+                    }
+                }
+                if cli.json {
+                    #[derive(Serialize)]
+                    struct Out<'a> {
+                        rendered: Vec<&'a std::path::Path>,
+                        differing: &'a [PathBuf],
+                    }
+                    let out = Out {
+                        rendered: rendered.iter().map(|r| r.path.as_path()).collect(),
+                        differing: &differing,
+                    };
+                    println!("{}", serde_json::to_string_pretty(&out)?);
+                } else {
+                    for n in &notes {
+                        println!("{n}");
+                    }
+                    if differing.is_empty() {
+                        println!(
+                            "ok    {} projection{} match the files on disk",
+                            rendered.len(),
+                            if rendered.len() == 1 { "" } else { "s" }
+                        );
+                    } else {
+                        for p in &differing {
+                            let on_disk =
+                                std::fs::read_to_string(book.root.join(p)).unwrap_or_default();
+                            let r = rendered.iter().find(|r| r.path == *p).expect("rendered");
+                            let (added, removed) = render::line_delta(&on_disk, &r.text);
+                            println!(
+                                "DIFFERS  {}  {removed} lines on disk would change, {added} new",
+                                p.display()
+                            );
+                        }
+                    }
+                }
+                return Ok(if differing.is_empty() {
+                    ExitCode::SUCCESS
+                } else {
+                    ExitCode::from(1)
+                });
+            }
+            let written = render::write(&book, &mut notes)?;
+            if cli.json {
+                println!("{}", serde_json::to_string_pretty(&written)?);
+            } else {
+                for n in &notes {
+                    println!("{n}");
+                }
+                for p in &written {
+                    println!("wrote {}", p.display());
+                }
+            }
+            Ok(ExitCode::SUCCESS)
+        }
 
         Command::Pack(args) => {
             let for_id = match &args.for_id {

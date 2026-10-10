@@ -61,7 +61,6 @@ pub fn decision(d: &Decision) -> String {
     if !d.title.is_empty() {
         field(&mut out, "title", &d.title);
     }
-    opt(&mut out, "section", &d.section);
     field(&mut out, "ruling", &d.ruling);
     opt(&mut out, "why", &d.why);
     if !d.details.is_empty() {

@@ -15,7 +15,8 @@
 //! into memory (B8); [`cite`] finds where ids are named; [`check`] runs
 //! the integrity checks (B20); [`pack`] assembles what a session reads
 //! for one task (B15); [`emit`] writes an entry as TOML; [`import`] is
-//! the one-time migration of acquisition's markdown registry.
+//! the one-time migration of acquisition's markdown registry; [`render`]
+//! writes the markdown projections (B9).
 
 pub mod book;
 pub mod check;
@@ -25,6 +26,7 @@ pub mod emit;
 pub mod id;
 pub mod import;
 pub mod pack;
+pub mod render;
 pub mod schema;
 
 pub use book::Book;

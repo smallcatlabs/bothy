@@ -10,6 +10,8 @@ use anyhow::{Context, Result, bail};
 use indexmap::IndexMap;
 use serde::Deserialize;
 
+use crate::id::Id;
+
 /// The file name the tool looks for, walking up from the working
 /// directory the way cargo looks for `Cargo.toml`.
 pub const FILE_NAME: &str = "bothy.toml";
@@ -33,6 +35,45 @@ pub struct Config {
     /// Closed enumerations (B7).
     #[serde(default, rename = "enum")]
     pub enums: BTreeMap<String, Enum>,
+    /// The markdown files rendered from the book (B2, B9).
+    #[serde(default)]
+    pub projection: Vec<Projection>,
+}
+
+/// One rendered file, or one per area.
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct Projection {
+    /// Relative to the root; `{area}` is replaced when `for_each = "area"`.
+    pub out: String,
+    /// A template file relative to the root, or a built-in: `builtin:area`
+    /// (acquisition's area-file form, the default with `for_each`),
+    /// `builtin:book` (every area in one file, the default otherwise).
+    pub template: Option<String>,
+    /// `"area"` renders `out` once per declared area.
+    pub for_each: Option<String>,
+    /// Areas left out of `for_each`.
+    #[serde(default)]
+    pub except: Vec<String>,
+    /// Whether the first line names the source (B2). On by default; a
+    /// consumer whose golden files have no room for it turns it off.
+    #[serde(default = "default_true")]
+    pub header: bool,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+/// The curated order of an area's rendered file: sections, each with
+/// its decisions in reading order, and the parks in order. An entry the
+/// layout does not place renders after the placed ones, by id.
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct Section {
+    pub title: String,
+    #[serde(default)]
+    pub ids: Vec<Id>,
 }
 
 fn default_root() -> PathBuf {
@@ -56,6 +97,12 @@ pub struct Area {
     /// names with their sizes but does not inline (K11).
     #[serde(default)]
     pub also: Vec<String>,
+    /// The rendered file's sections, in order, each with its ids in order.
+    #[serde(default)]
+    pub sections: Vec<Section>,
+    /// The rendered file's parks, in order.
+    #[serde(default)]
+    pub parks: Vec<Id>,
 }
 
 #[derive(Deserialize, Debug)]

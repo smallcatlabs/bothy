@@ -344,7 +344,15 @@ Stated before the code, in the consumer's idiom:
    files, and `bothy check` passes on them with the same findings
    `docs-check.sh` reports today (one uncited decision, C16; the notes
    nothing cites) **plus** the C86 index gap.
-2. `bothy render --check` reproduces `CONTEXT.md` and the seven
+2. *Met 2026-10-10 at acquisition `9e934746`, up to the normalization:
+   six of the eight files render byte for byte with no change to
+   acquisition at all; `decisions/search.md` differs in five rulings'
+   marker order, and `CONTEXT.md` in its index table, which the render
+   lists in file order and with C86. Titles needed no normalization:
+   they are kept verbatim with their terminators (B18), and a ruling
+   joined to its title by punctuation renders that way. The reading
+   order of each file is curated and lives as a layout in `bothy.toml`
+   (B21).* `bothy render --check` reproduces `CONTEXT.md` and the seven
    `decisions/*.md` byte for byte, after one normalization commit on
    the acquisition side whose diff is only whitespace, marker order
    and title terminators.

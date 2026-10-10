@@ -24,7 +24,7 @@ bothy show B3                  # one ruling, what it names, what cites it
 bothy list parks --area cli    # everything this area has deferred, with its trigger
 bothy list decisions --uncited # rulings no code, test or document names yet
 bothy pack --area check        # what a session reads before touching the checks
-bothy render --check           # the markdown on disk matches the source (coming)
+bothy render --check           # the markdown on disk matches the source
 ```
 
 The examples are real: they run against this repository's own book.
@@ -34,14 +34,17 @@ file. The index is built in memory every run and never written. The
 markdown is a projection. Those three roles — intent, derivation,
 rendering — are the design.
 
-Status: `check`, `list`, `show`, `pack` and `import` work. Bothy's own
-book under `bothy/` is twenty rulings and eleven parks, the first thirty
-written by hand before the tool existed. `import` reads
+Status: `check`, `list`, `show`, `pack`, `import` and `render` work.
+Bothy's own book under `bothy/` is twenty-one rulings and eleven parks,
+the first thirty written by hand before the tool existed; `docs/book.md`
+is its rendering. `import` reads
 [acquisition](https://github.com/gerwaric/acquisition)'s markdown
 registry whole, 108 decisions, 53 parks, 6 principles and 5 invariants,
-with no exception, and `check` passes on the result in half a second.
-Acquisition adopts the tool when its search slice closes; until then it
-is read-only test data. `render`, `new` and `amend` are next. Everything the tool writes for a reader is written
+with no exception, and `render` writes six of its eight registry files
+back byte for byte; the other two differ only by the marker order and
+index order the design brief predicted. Acquisition adopts the tool when
+its search slice closes; until then it is read-only test data. `new` and
+`amend` are next. Everything the tool writes for a reader is written
 for the smallest model in use. Start at `AGENTS.md`; the design is
 `docs/design-brief.md`.
 

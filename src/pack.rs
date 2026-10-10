@@ -21,7 +21,6 @@ use crate::book::{Book, Loaded};
 use crate::cite::{self, Citation};
 use crate::config::Kind;
 use crate::id::Id;
-use crate::schema::Entry;
 
 /// What the caller asked for.
 #[derive(Debug, Default)]
@@ -358,54 +357,14 @@ fn push_section(
     }
 }
 
-/// One entry as a markdown bullet, the strings as stored (B18).
+/// One entry as a markdown bullet, in the registry's own form (B18),
+/// with the id in bold so a reader can find it again.
 fn render_entry(l: &Loaded) -> String {
-    let mut s = String::new();
-    match &l.entry {
-        Entry::Decision(d) => {
-            let _ = write!(s, "- **{} — {}** {}", d.id, d.title.trim(), d.ruling.trim());
-            if let Some(why) = &d.why {
-                let _ = write!(s, " *Why:* {}", why.trim());
-            }
-            if !d.details.is_empty() {
-                let _ = write!(s, " *Details:* {}.", d.details.join("; "));
-            }
-            if !d.pinned.is_empty() {
-                let _ = write!(s, " *Pinned:* {}.", d.pinned.join("; "));
-            }
-            if !d.evidence.is_empty() {
-                let _ = write!(s, " *Evidence:* {}.", d.evidence.join("; "));
-            }
-            if let Some(v) = &d.verdict {
-                let _ = write!(s, " Owner, verbatim: \"{}\"", v.trim());
-            }
-            if let Some(h) = &d.history {
-                let _ = write!(s, " {}", h.trim());
-            } else if let Some(date) = &d.decided {
-                let _ = write!(s, " Decided {date}");
-                if !d.amended.is_empty() {
-                    let dates: Vec<String> = d.amended.iter().map(ToString::to_string).collect();
-                    let _ = write!(s, "; amended {}", dates.join(", "));
-                }
-                s.push('.');
-            }
-        }
-        Entry::Park(p) => {
-            let _ = write!(s, "- **{}** {} → {}", p.id, p.item.trim(), p.home.trim());
-            if let Some(t) = &p.trigger {
-                let _ = write!(s, ". Trigger: {}", t.trim());
-            }
-            if let Some(why) = &p.why {
-                let _ = write!(s, " ({})", why.trim());
-            }
-            if let Some(v) = &p.verdict {
-                let _ = write!(s, " Owner, verbatim: \"{}\"", v.trim());
-            }
-            if let Some(m) = &p.measured {
-                let _ = write!(s, " Measured: {}", m.trim());
-            }
-        }
-    }
+    let line = crate::render::entry_line(l);
+    let mut s = match l.kind {
+        Kind::Park => line.replacen("- ", &format!("- **{}** ", l.entry.id()), 1),
+        _ => line,
+    };
     s.push('\n');
     s
 }

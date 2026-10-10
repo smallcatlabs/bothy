@@ -62,6 +62,13 @@ paths = ["src/**/*.rs", "tests/**/*.rs", "README.md", "AGENTS.md", "Cargo.toml"]
 # not entries in this book.
 exclude = ["tests/worked_examples.rs"]
 
+# The markdown rendered from the book (B2, B9): one page of every ruling
+# and park, for reading on GitHub. `bothy render` writes it; `check`
+# reports it when it is stale.
+
+[[projection]]
+out = "docs/book.md"
+
 # Closed enumerations (B7). A value outside the list is a check failure.
 
 [enum.decision_status]
