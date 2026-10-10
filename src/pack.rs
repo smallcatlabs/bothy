@@ -2,8 +2,8 @@
 //!
 //! The order is fixed and goes from what binds everything to what binds
 //! least: invariants, principles, cross-cutting rulings, the areas'
-//! rulings, their parks, the documents to read also, then the citation
-//! map that says where each ruling is held. Retired entries are omitted
+//! rulings, their parks, the cross-cutting parks, the documents to read
+//! also, then the citation map that says where each ruling is held. Retired entries are omitted
 //! (B3). A budget trims whole blocks from the tail and the footer names
 //! each one trimmed; nothing leaves silently.
 //!
@@ -264,6 +264,22 @@ fn pack_areas(
                 &parks,
             );
         }
+    }
+    // Scope deferred across every area is deferred in this one (B15).
+    let cross_parks: Vec<&Loaded> = book
+        .entries
+        .iter()
+        .filter(|l| l.kind == Kind::Park && l.entry.area() == Some("cross-cutting"))
+        .filter(live)
+        .collect();
+    if !cross_parks.is_empty() && !areas.iter().any(|a| a == "cross-cutting") {
+        push_section(
+            blocks,
+            included,
+            "## Parked across every area (deferred; each with the trigger that reopens it)\n\n",
+            "cross-cutting park",
+            &cross_parks,
+        );
     }
     let also: Vec<String> = areas
         .iter()

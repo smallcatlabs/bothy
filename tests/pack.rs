@@ -42,6 +42,12 @@ fn area_pack_has_the_fixed_order_and_only_its_area() {
     );
     assert!(t.contains("**B20 — "), "the area's ruling is in");
     assert!(t.contains("**K3**"), "the area's park is in");
+    let across = pos(t, "## Parked across every area");
+    assert!(parks < across && across < map, "order is fixed");
+    assert!(
+        t.contains("**K7**"),
+        "a cross-cutting park is in every pack, as a cross-cutting ruling is"
+    );
     assert!(!t.contains("**B5 — "), "another area's ruling is out");
     assert!(
         t.contains(pack::ESTIMATOR),

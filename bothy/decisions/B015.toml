@@ -5,12 +5,17 @@ ruling = '''
 It takes `--area <name>`, `--path <file>` (the area resolved through the
 paths `bothy.toml` declares) or `--for <id>`. Its order is fixed:
 invariants, principles, cross-cutting rulings, the area's rulings, its
-parks, the open slice's checklist, then the citation map from id to
-file:line so the reader knows where each mechanism lives. Its footer
+parks, the cross-cutting parks, the open slice's checklist, then the
+citation map from id to file:line so the reader knows where each
+mechanism lives. A cross-cutting park is in every pack for the reason a
+cross-cutting ruling is: scope deferred across every area is deferred
+in this one (amended 2026-10-10, when the store pack of acquisition was
+found to leave out the one park its `CONTEXT.md` shows every session). Its footer
 carries bytes, a token estimate with the estimator's name, and the
 commit it was built at. `--budget` trims from the tail and names what it
 trimmed; nothing is trimmed silently.
 '''
 why = "It is the verb every session runs first; whether it is seamless is whether the tool is."
 decided = 2026-10-09
+amended = [2026-10-10]
 status = "ruled"
