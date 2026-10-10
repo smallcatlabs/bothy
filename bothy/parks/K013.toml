@@ -1,0 +1,7 @@
+id = "K13"
+area = "render"
+item = "A date `amend` adds to an imported entry does not render: an entry with a `history` sentence renders that sentence and ignores `amended`"
+home = "the dating clause in src/render.rs, or an `amend` that extends `history`"
+trigger = "acquisition adopting bothy, where 108 decisions carry `history` and the first of them is amended"
+why = "the byte-for-byte render of acquisition depends on `history` rendering verbatim (B18), and how an amendment should read there is the owner's call when it is first needed"
+parked = 2026-10-10

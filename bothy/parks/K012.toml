@@ -1,0 +1,7 @@
+id = "K12"
+area = "cli"
+item = "A verb that supersedes a ruling: writes the new one and sets the old one's `status` and `superseded_by` in one call"
+home = "a `--supersedes <id>` flag on `bothy new decision`, over the same in-place edit `amend` uses (B23)"
+trigger = "the first ruling superseded by hand, or a `check` failure on a superseded pair that a session got wrong"
+why = "no ruling in this book has been superseded yet, and the two lines are short to write by hand"
+parked = 2026-10-10

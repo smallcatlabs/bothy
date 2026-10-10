@@ -106,6 +106,10 @@ an entry the layout does not place renders after the placed ones, by
 id, and `check` says so. An entry knows its area and nothing about
 where in the file it sits. *Why:* The order of acquisition's files is curated, not ascending: C108 sits with the store facts it extends and C85 beside C9. Order is a rendering concern, so it lives with the template, and an entry file stays a fact about one ruling. Decided 2026-10-10.
 
+Parked, each with the trigger that reopens it:
+
+- A date `amend` adds to an imported entry does not render: an entry with a `history` sentence renders that sentence and ignores `amended` → the dating clause in src/render.rs, or an `amend` that extends `history`. Trigger: acquisition adopting bothy, where 108 decisions carry `history` and the first of them is amended (the byte-for-byte render of acquisition depends on `history` rendering verbatim (B18), and how an amendment should read there is the owner's call when it is first needed)
+
 ## Assembly: what a session reads for one task
 
 - **B15 — pack is the primary read surface** It takes `--area <name>`, `--path <file>` (the area resolved through the
@@ -168,6 +172,7 @@ Parked, each with the trigger that reopens it:
 - An MCP server exposing the read verbs and the two write verbs over the same crate → a second binary or a subcommand; rmcp and tokio arrive with it (B12). Trigger: v0's done-criteria met; this is the first v1 item because a smaller model gains most from a typed tool call over a remembered flag (B17)
 - The seat verb: the legibility seat's questions, pack and transcript, scored → a subcommand over pack. Trigger: the first pack worth measuring, after v0's done-criteria
 - The stats verb (the baseline table) and a standalone blame verb → subcommands over the loaded book. Trigger: the next acquisition reflection wanting the baseline table from one command
+- A verb that supersedes a ruling: writes the new one and sets the old one's `status` and `superseded_by` in one call → a `--supersedes <id>` flag on `bothy new decision`, over the same in-place edit `amend` uses (B23). Trigger: the first ruling superseded by hand, or a `check` failure on a superseded pair that a session got wrong (no ruling in this book has been superseded yet, and the two lines are short to write by hand)
 
 ## This repository: language, dependencies, consumers, release
 
