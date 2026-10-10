@@ -41,7 +41,7 @@ rendering — are the design.
 
 Status: `check`, `list`, `show`, `pack`, `import`, `render`, `new`,
 `amend` and `park fire` work. Bothy's own book under `bothy/` is
-twenty-six rulings and fifteen parks, the first thirty written by
+twenty-seven rulings and fifteen parks, the first thirty written by
 hand before the tool existed and the rest by `bothy new`;
 `docs/book.md` is its rendering. `import` reads
 [acquisition](https://github.com/gerwaric/acquisition)'s markdown
