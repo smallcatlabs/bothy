@@ -150,8 +150,9 @@ fn check_ids(book: &Book, out: &mut Vec<Diagnostic>) {
     }
 }
 
-/// Areas declared (B19), enum values legal (B7), dates plain, the
-/// superseded pair consistent (B3), fired pairs consistent.
+/// Areas declared (B19), enum values legal (B7), dates plain, no entry
+/// that says nothing (B20), the superseded pair consistent (B3), fired
+/// pairs consistent.
 fn check_fields(book: &Book, out: &mut Vec<Diagnostic>) {
     let statuses: Vec<String> = book
         .config
@@ -200,6 +201,20 @@ fn check_fields(book: &Book, out: &mut Vec<Diagnostic>) {
                         Some("add `title = \"...\"`, the bold lead a reader skims; only a principle may go without".into()),
                     ));
                 }
+                // A title may be the whole rule (nine of acquisition's are),
+                // so a blank ruling is refused only where no title stands in.
+                if loaded.kind == Kind::Principle
+                    && d.title.trim().is_empty()
+                    && d.ruling.trim().is_empty()
+                {
+                    out.push(Diagnostic::fail(
+                        path.clone(),
+                        loaded.line_of("ruling"),
+                        "the principle has no title and a blank `ruling`, so it says nothing"
+                            .into(),
+                        Some("write the principle in `ruling`".into()),
+                    ));
+                }
                 if !statuses.iter().any(|s| s == &d.status) {
                     out.push(Diagnostic::fail(
                         path.clone(),
@@ -238,7 +253,20 @@ fn check_fields(book: &Book, out: &mut Vec<Diagnostic>) {
                 }
             }
             Entry::Park(p) => {
-                if p.trigger.is_none() {
+                for (field, value, fix) in [
+                    ("item", &p.item, "say what is deferred, in one line"),
+                    ("home", &p.home, "say where it lands when it is built"),
+                ] {
+                    if value.trim().is_empty() {
+                        out.push(Diagnostic::fail(
+                            path.clone(),
+                            loaded.line_of(field),
+                            format!("`{field}` is blank"),
+                            Some(fix.into()),
+                        ));
+                    }
+                }
+                if p.trigger.as_deref().is_none_or(|t| t.trim().is_empty()) {
                     out.push(Diagnostic::note(
                         path.clone(),
                         loaded.line_of("home"),
