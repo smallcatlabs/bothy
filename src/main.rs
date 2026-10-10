@@ -18,7 +18,8 @@ use bothy::id::Id;
 use bothy::import;
 use bothy::pack;
 use bothy::render;
-use bothy::schema::Entry;
+use bothy::schema::{Date, Entry};
+use bothy::write;
 
 /// bothy — the book the next session reads.
 ///
@@ -86,6 +87,82 @@ enum Command {
         #[arg(long)]
         diff: bool,
     },
+
+    /// Add an entry: the next free id, a new file, the fields you give.
+    ///
+    /// Give every field as a flag and the entry is complete in one call.
+    /// A required field you leave out is written blank, under a comment
+    /// that says what belongs there, and `bothy check` refuses the entry
+    /// until you fill it in. Nothing is asked and no editor is opened.
+    ///
+    /// A decision, invariant or principle takes --title, --ruling and
+    /// --why. A park takes --item, --home, --trigger and --why.
+    New(NewArgs),
+}
+
+#[derive(Args)]
+struct NewArgs {
+    /// Which kind of entry to add.
+    #[arg(value_enum)]
+    kind: NewKind,
+
+    /// The area the entry belongs to, as declared in bothy.toml.
+    #[arg(long, value_name = "NAME")]
+    area: String,
+
+    /// The rule in one line: the bold lead a reader skims.
+    #[arg(long, value_name = "TEXT")]
+    title: Option<String>,
+
+    /// What was decided, in full sentences. Give `-` to read the text
+    /// from standard input, which spares quoting backticks for the shell.
+    #[arg(long, value_name = "TEXT")]
+    ruling: Option<String>,
+
+    /// The reason, in a sentence. For a park: why it waits, in a clause.
+    #[arg(long, value_name = "TEXT")]
+    why: Option<String>,
+
+    /// Park: what is deferred, in one line.
+    #[arg(long, value_name = "TEXT")]
+    item: Option<String>,
+
+    /// Park: where it lands when it is built.
+    #[arg(long, value_name = "TEXT")]
+    home: Option<String>,
+
+    /// Park: what reopens it. `never` is legal and means what it says.
+    #[arg(long, value_name = "TEXT")]
+    trigger: Option<String>,
+
+    /// The namespace letter, needed only when the book has two
+    /// namespaces of this kind.
+    #[arg(long, value_name = "LETTER")]
+    letter: Option<char>,
+
+    /// The date to record, like 2026-10-09. Default: today, by this
+    /// machine's clock and time zone.
+    #[arg(long, value_name = "DATE")]
+    date: Option<String>,
+}
+
+#[derive(ValueEnum, Clone, Copy, PartialEq, Eq)]
+enum NewKind {
+    Decision,
+    Invariant,
+    Principle,
+    Park,
+}
+
+impl NewKind {
+    fn kind(self) -> Kind {
+        match self {
+            NewKind::Decision => Kind::Decision,
+            NewKind::Invariant => Kind::Invariant,
+            NewKind::Principle => Kind::Principle,
+            NewKind::Park => Kind::Park,
+        }
+    }
 }
 
 #[derive(Args)]
@@ -426,6 +503,59 @@ fn run(cli: Cli) -> Result<ExitCode> {
             Ok(ExitCode::SUCCESS)
         }
 
+        Command::New(args) => {
+            let today = date_or_today(args.date.as_deref())?;
+            let ruling = match args.ruling.as_deref() {
+                Some("-") => {
+                    let mut text = String::new();
+                    std::io::Read::read_to_string(&mut std::io::stdin(), &mut text)?;
+                    Some(text)
+                }
+                _ => args.ruling,
+            };
+            let draft = write::Draft {
+                area: args.area,
+                letter: args.letter,
+                title: args.title,
+                ruling,
+                item: args.item,
+                home: args.home,
+                trigger: args.trigger,
+                why: args.why,
+            };
+            let written = write::new_entry(&book, args.kind.kind(), &draft, &today)?;
+            if cli.json {
+                println!("{}", serde_json::to_string_pretty(&written)?);
+            } else {
+                println!(
+                    "wrote {}  ({}, a {} in area {})",
+                    written.path.display(),
+                    written.id,
+                    written.kind,
+                    written.area
+                );
+                for d in &written.diagnostics {
+                    println!("{d}");
+                }
+                let render = if book.config.projection.is_empty() {
+                    ""
+                } else {
+                    " and `bothy render`"
+                };
+                if written.missing.is_empty() {
+                    println!("next: run `bothy check`{render}");
+                } else {
+                    let fields: Vec<String> =
+                        written.missing.iter().map(|f| format!("`{f}`")).collect();
+                    println!(
+                        "next: open the file and fill in {}, then run `bothy check`{render}",
+                        fields.join(", ")
+                    );
+                }
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+
         Command::Pack(args) => {
             let for_id = match &args.for_id {
                 Some(s) => Some(Id::parse(s).map_err(|e| anyhow!("{e}"))?),
@@ -444,6 +574,16 @@ fn run(cli: Cli) -> Result<ExitCode> {
                 print!("{}", pack.text);
             }
             Ok(ExitCode::SUCCESS)
+        }
+    }
+}
+
+/// The date a write verb records: `--date` when given, else today here.
+fn date_or_today(given: Option<&str>) -> Result<Date> {
+    match given {
+        None => Ok(write::today()),
+        Some(s) => {
+            Date::parse(s).ok_or_else(|| anyhow!("\"{s}\" is not a date; write it like 2026-10-09"))
         }
     }
 }

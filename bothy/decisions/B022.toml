@@ -1,0 +1,24 @@
+id = "B22"
+area = "cli"
+title = "A write verb takes every field as a flag, never prompts, and leaves a blank only for what it was not given"
+ruling = '''
+`bothy new <kind> --area <name>` takes the next free id (B3), counting
+files that do not parse, and creates the file; it never replaces one
+that exists, so two sessions that race collide loudly (B5). A field
+given as a flag is written as given, and `--ruling -` reads the text
+from standard input so backticks need no quoting for the shell. A
+field the kind expects and was not given is written blank under a
+comment that says what belongs there. `check` refuses a decision with
+no title and a park with no item or home (B20), so the gate stays red
+until those are filled; a blank ruling under a title is legal and the
+comment says when. An entry given whole carries no comments. The verb
+then reads the book back and prints what `check` says about the new
+file. A park is made by `new park`; there is no second spelling under
+`park`.
+The date a write verb records is the calendar day on the machine's own
+clock and time zone, and `--date` overrides it. The verbs are functions
+in the library that take the date as an argument; the command line is
+one caller and a server will be another (K8).
+'''
+why = "The daily user is an agent in a shell, with no terminal to answer a prompt and no editor to be opened into. One call that writes a whole entry is the pleasant path; a blank that keeps the gate red until it is filled is the safe one."
+decided = 2026-10-10

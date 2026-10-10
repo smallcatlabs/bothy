@@ -16,7 +16,8 @@
 //! the integrity checks (B20); [`pack`] assembles what a session reads
 //! for one task (B15); [`emit`] writes an entry as TOML; [`import`] is
 //! the one-time migration of acquisition's markdown registry; [`render`]
-//! writes the markdown projections (B9).
+//! writes the markdown projections (B9); [`mod@write`] is the verbs that
+//! change the book (B22).
 
 pub mod book;
 pub mod check;
@@ -28,6 +29,7 @@ pub mod import;
 pub mod pack;
 pub mod render;
 pub mod schema;
+pub mod write;
 
 pub use book::Book;
 pub use check::{Diagnostic, Level, Report};

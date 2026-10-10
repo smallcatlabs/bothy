@@ -1,11 +1,13 @@
 id = "B12"
 area = "repo"
-title = "Rust, edition 2024: clap, serde, toml and toml_edit, minijinja, globset and ignore, regex"
+title = "Rust, edition 2024: clap, serde, toml and toml_edit, minijinja, globset and ignore, regex, jiff"
 ruling = '''
 No async in v0. `rmcp` and `tokio` arrive with the MCP server (K8) and
 not before. A dependency is added when a verb needs it, in the commit
-that adds the verb.
+that adds the verb. Amended 2026-10-10: `jiff` arrived with `new`, which
+needs today's date in the machine's time zone and not in UTC (B22).
 '''
 why = "Each is the plain choice for its job; async is a cost with no v0 buyer."
 decided = 2026-10-09
+amended = [2026-10-10]
 status = "ruled"

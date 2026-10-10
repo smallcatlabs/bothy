@@ -310,7 +310,7 @@ pub enum Resolution {
     Unknown,
 }
 
-fn parse_entry(kind: Kind, source: &str) -> Result<Entry, toml::de::Error> {
+pub(crate) fn parse_entry(kind: Kind, source: &str) -> Result<Entry, toml::de::Error> {
     Ok(match kind {
         Kind::Decision | Kind::Invariant | Kind::Principle => {
             Entry::Decision(toml::from_str::<Decision>(source)?)

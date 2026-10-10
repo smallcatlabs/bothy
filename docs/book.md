@@ -126,6 +126,23 @@ Parked, each with the trigger that reopens it:
 
 - **B14 — Writes go through toml_edit; the tool never reorders keys, rewrites values it did not change, or strips comments** `amend` adds a line; it does not reformat the file. Optional fields are
 omitted, not written empty, in files the tool creates. *Why:* An entry is its author's file. Decided 2026-10-09.
+- **B22 — A write verb takes every field as a flag, never prompts, and leaves a blank only for what it was not given** `bothy new <kind> --area <name>` takes the next free id (B3), counting
+files that do not parse, and creates the file; it never replaces one
+that exists, so two sessions that race collide loudly (B5). A field
+given as a flag is written as given, and `--ruling -` reads the text
+from standard input so backticks need no quoting for the shell. A
+field the kind expects and was not given is written blank under a
+comment that says what belongs there. `check` refuses a decision with
+no title and a park with no item or home (B20), so the gate stays red
+until those are filled; a blank ruling under a title is legal and the
+comment says when. An entry given whole carries no comments. The verb
+then reads the book back and prints what `check` says about the new
+file. A park is made by `new park`; there is no second spelling under
+`park`.
+The date a write verb records is the calendar day on the machine's own
+clock and time zone, and `--date` overrides it. The verbs are functions
+in the library that take the date as an argument; the command line is
+one caller and a server will be another (K8). *Why:* The daily user is an agent in a shell, with no terminal to answer a prompt and no editor to be opened into. One call that writes a whole entry is the pleasant path; a blank that keeps the gate red until it is filled is the safe one. Decided 2026-10-10.
 
 Parked, each with the trigger that reopens it:
 
@@ -138,9 +155,10 @@ Parked, each with the trigger that reopens it:
 
 - **B11 — Bothy lives in its own repository under Small Cat Labs; a consumer depends on it as a development tool, never as a workspace member** `cargo install --git` or a pinned binary. Acquisition's crate graph (its
 C1) is untouched, and the tool's release cadence is its own. *Why:* A registry tool inside the consumer's workspace would be a dependency edge its own check would have to explain. Decided 2026-10-09.
-- **B12 — Rust, edition 2024: clap, serde, toml and toml_edit, minijinja, globset and ignore, regex** No async in v0. `rmcp` and `tokio` arrive with the MCP server (K8) and
+- **B12 — Rust, edition 2024: clap, serde, toml and toml_edit, minijinja, globset and ignore, regex, jiff** No async in v0. `rmcp` and `tokio` arrive with the MCP server (K8) and
 not before. A dependency is added when a verb needs it, in the commit
-that adds the verb. *Why:* Each is the plain choice for its job; async is a cost with no v0 buyer. Decided 2026-10-09.
+that adds the verb. Amended 2026-10-10: `jiff` arrived with `new`, which
+needs today's date in the machine's time zone and not in UTC (B22). *Why:* Each is the plain choice for its job; async is a cost with no v0 buyer. Decided 2026-10-09; amended 2026-10-10.
 - **B16 — Bothy is its own first consumer** Bothy's rulings and parks live in `bothy/` in this repository, written
 by hand before the tool existed. The design brief is history once they
 exist: where the brief and an entry disagree, the entry wins.
