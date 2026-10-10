@@ -45,6 +45,12 @@ fn acquisition_imports_whole_and_passes_check() {
     // is no floor; the count the summary reports is checked below.
     assert!(!imported.parks.is_empty());
     assert_eq!(imported.principles.len(), 6);
+    // The orientation leaves the template for bothy.toml, so a pack and
+    // the rendered CONTEXT.md print one source (B27).
+    let orientation = imported.orientation.as_deref().expect("an orientation");
+    assert!(orientation.starts_with("Acquisition is "));
+    assert!(imported.context_template.contains("{{ orientation }}"));
+    assert!(!imported.context_template.contains(orientation));
     assert_eq!(imported.invariants.len(), 5);
     assert_eq!(
         imported.areas.len(),

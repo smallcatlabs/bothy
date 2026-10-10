@@ -7,6 +7,15 @@
 
 root = "."
 
+# What the project is, for a reader who has never seen it. Every pack
+# opens with it and docs/book.md prints it (B27).
+orientation = """
+bothy is a command-line tool, written in Rust, that keeps a project's \
+decisions and parks as one TOML file per entry, checks them, and \
+assembles what a session reads before it changes code. This repository \
+is the tool and its own first consumer: the rulings here are the \
+tool's own, and the code under src/ is what they govern."""
+
 # Areas. An entry names one; an undeclared name is refused (B19).
 # `paths` lets `pack --path <file>` find the area a file belongs to.
 

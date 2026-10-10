@@ -3,6 +3,8 @@
 
 Every ruling and every park, by area, rendered from the entries.
 
+bothy is a command-line tool, written in Rust, that keeps a project's decisions and parks as one TOML file per entry, checks them, and assembles what a session reads before it changes code. This repository is the tool and its own first consumer: the rulings here are the tool's own, and the code under src/ is what they govern.
+
 ## What every area must know
 
 - **B1 — The source is structured text in git, one entry per file, that a person can edit with nothing but a text editor** No binary, no server, no lock, no tool required to add or change an
@@ -144,6 +146,16 @@ found to leave out the one park its `CONTEXT.md` shows every session). Its foote
 carries bytes, a token estimate with the estimator's name, and the
 commit it was built at. `--budget` trims from the tail and names what it
 trimmed; nothing is trimmed silently. *Why:* It is the verb every session runs first; whether it is seamless is whether the tool is. Decided 2026-10-09; amended 2026-10-10.
+- **B27 — A book states what the project is once, in bothy.toml, and every pack opens with it** `orientation` in `bothy.toml` is a few sentences for a reader who has
+never seen the project: what it is, and what outranks everything else
+in it. An area pack prints it directly under its heading, before any
+ruling, because the rulings name things only it explains. A template
+may print it as `{{ orientation }}`, and the built-in book does, so a
+rendered file and a pack say the same words from one source (B2). It is
+prose, not an entry: it rules nothing and nothing cites it. A sentence
+in it that binds anyone belongs in an invariant or a principle instead.
+The acquisition import takes the paragraph under `## Orientation` in
+`CONTEXT.md` as the orientation and leaves a tag in its place. *Why:* The store pack of acquisition gave a reader five invariants about GGG, Cloudflare and rate-limit standing and never said what GGG is; CONTEXT.md says it in three sentences that the pack left behind. The reader who pays for that is the smallest model (B17). Decided 2026-10-10.
 
 Parked, each with the trigger that reopens it:
 

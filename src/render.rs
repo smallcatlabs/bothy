@@ -332,7 +332,9 @@ const BUILTIN_AREA: &str = "# Decisions — {{ area.title }}
 const BUILTIN_BOOK: &str = "# The book
 
 Every ruling and every park, by area, rendered from the entries.
-{% for a in areas %}
+{% if orientation %}
+{{ orientation }}
+{% endif %}{% for a in areas %}
 ## {{ a.title }}
 {% for s in a.sections %}{% if a.sections|length > 1 %}
 ### {{ s.title }}
@@ -444,6 +446,7 @@ pub fn all(book: &Book, notes: &mut Vec<Diagnostic>) -> Result<Vec<Rendered>> {
                         principles => Value::from(Serde(kind_lines(Kind::Principle, None))),
                         cross => Value::from(Serde(&cross_entries)),
                         cross_parks => Value::from(Serde(&cross_parks)),
+                        orientation => book.config.orientation.as_deref().unwrap_or("").trim(),
                     })
                     .with_context(|| format!("projection {}", proj.out))?;
                 out.push(Rendered {

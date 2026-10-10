@@ -1,7 +1,7 @@
 //! `pack`: what a session reads before one task, in one call (B15).
 //!
 //! The order is fixed and goes from what binds everything to what binds
-//! least: invariants, principles, cross-cutting rulings, the areas'
+//! least: the project's orientation (B27), invariants, principles, cross-cutting rulings, the areas'
 //! rulings, their parks, the cross-cutting parks, the documents to read
 //! also, then the citation map that says where each ruling is held. Retired entries are omitted
 //! (B3). A budget trims whole blocks from the tail and the footer names
@@ -164,6 +164,13 @@ fn pack_areas(
         "# What to read before touching {}\n\n",
         titles.join(" and ")
     );
+    // What the project is comes first: the rulings below name things
+    // only that sentence explains (B27).
+    if let Some(o) = &book.config.orientation
+        && !o.trim().is_empty()
+    {
+        let _ = write!(head, "{}\n\n", o.trim());
+    }
     head.push_str(
         "This pack is the project's book, assembled for one task. Rulings bind: \
          if the code you are about to change holds one, change the ruling first or \

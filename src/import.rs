@@ -65,6 +65,9 @@ pub struct Imported {
     pub exceptions: Vec<String>,
     /// Letters named inside entries that no namespace will define.
     pub undeclared: BTreeMap<char, usize>,
+    /// The paragraph under `## Orientation`, which becomes the book's
+    /// `orientation` and one tag in the template (B27).
+    pub orientation: Option<String>,
     /// `CONTEXT.md` with its generated blocks replaced by template tags.
     pub context_template: String,
 }
@@ -131,8 +134,31 @@ fn parse_context(text: &str, out: &mut Imported, _root: &Path) -> Result<()> {
     // kind is replaced once, and the tag carries the lines' own newlines.
     let mut template = String::new();
     let mut last_block: Option<&str> = None;
+    let mut orientation_until = 0;
     for (i, line) in text.lines().enumerate() {
         let lineno = i + 1;
+        // The orientation is the first paragraph under its heading; it
+        // moves to bothy.toml and the template names it (B27).
+        if section.starts_with("Orientation")
+            && out.orientation.is_none()
+            && !line.trim().is_empty()
+            && !line.starts_with('#')
+        {
+            let end = text
+                .lines()
+                .skip(i)
+                .position(|l| l.trim().is_empty())
+                .map_or(text.lines().count(), |n| i + n);
+            let para: Vec<&str> = text.lines().skip(i).take(end - i).collect();
+            out.orientation = Some(para.join("\n"));
+            orientation_until = end;
+            template.push_str("{{ orientation }}\n");
+            last_block = None;
+            continue;
+        }
+        if i < orientation_until {
+            continue;
+        }
         let block = if section.starts_with("Invariants") && inv_re.is_match(line) {
             Some((
                 "invariants",
@@ -669,6 +695,13 @@ fn config_toml(imported: &Imported, root: &Path, out_dir: &Path, inside: bool) -
         let _ = writeln!(s, "root = {}\n", emit::string(&rel));
     } else {
         let _ = writeln!(s, "root = {}\n", emit::string(&root.display().to_string()));
+    }
+    if let Some(o) = &imported.orientation {
+        let _ = writeln!(
+            s,
+            "# What the project is. Every pack opens with it and CONTEXT.md prints it (B27).\norientation = {}\n",
+            emit::string(o)
+        );
     }
     for (name, meta) in &imported.areas {
         let _ = writeln!(s, "[area.{name}]");

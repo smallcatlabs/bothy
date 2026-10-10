@@ -23,6 +23,10 @@ pub struct Config {
     /// Every other path in this file is relative to the root.
     #[serde(default = "default_root")]
     pub root: PathBuf,
+    /// What the project is, in a few sentences, for a reader who has
+    /// never seen it. Every pack opens with it and a template may print
+    /// it, so it is written once, here (B27).
+    pub orientation: Option<String>,
     /// Declared areas, keyed by name, in the order they render (B19).
     #[serde(default)]
     pub area: IndexMap<String, Area>,

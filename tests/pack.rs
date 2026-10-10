@@ -27,6 +27,12 @@ fn area_pack_has_the_fixed_order_and_only_its_area() {
     )
     .unwrap();
     let t = &pack.text;
+    // What the project is comes before anything that binds (B27).
+    let orientation = pos(t, "bothy is a command-line tool");
+    assert!(
+        orientation < pos(t, "This pack is the project's book"),
+        "the orientation opens the pack"
+    );
     let cross = pos(t, "## Cross-cutting rulings");
     let rulings = pos(t, "## Rulings for `check`");
     let parks = pos(t, "## Parked in `check`");
